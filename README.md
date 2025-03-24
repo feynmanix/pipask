@@ -1,7 +1,7 @@
 # pipask: pip with consent
 
 # Usage
-1. Install `pipask` with `pip -g install pipask`.
+1. Install `pipask` with `pip install pipask`.
 2. Once installed, you can use `pipask` as a drop-in replacement for `pip`.
     ```bash
     pipask install requests
