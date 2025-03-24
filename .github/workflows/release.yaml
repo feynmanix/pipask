@@ -1,0 +1,105 @@
+name: Release
+on:
+  release:
+    types: [ released ]
+
+jobs:
+  tests:
+    name: 'Unit tests & static checks'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.10'
+
+      - name: Install dependencies
+        run: |
+          pipx install poetry
+          poetry install --no-interaction
+
+      - name: Run tests
+        run: |
+          poetry run pytest .
+
+      - name: Run type check
+        run: |
+          poetry run pyright .
+
+      - name: Run linters
+        run: |
+          poetry run ruff check .
+
+      - name: Run bandit static analyzer
+        run: |
+          poetry run bandit -c pyproject.toml -r .
+
+  build:
+    name: 'Build'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.10'
+
+      - name: Install dependencies
+        run: |
+          pipx install poetry
+          poetry install --no-interaction
+
+      - name: Build package
+        run: poetry build
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: python-package-distributions
+          path: dist/
+
+  release:
+    name: 'Release'
+    runs-on: ubuntu-latest
+    needs:
+      - build
+      - tests
+    environment:
+      name: pypi
+      url: https://pypi.org/p/pipc
+    permissions:
+      id-token: write
+      contents: write
+    steps:
+      - name: Download artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: python-package-distributions
+          path: dist/
+
+      - name: Sign the dists with Sigstore
+        uses: sigstore/gh-action-sigstore-python@v3.0.0
+        with:
+          inputs: >-
+            ./dist/*.tar.gz
+            ./dist/*.whl
+
+      - name: Upload artifact signatures to GitHub Release
+        if: github.event_name == 'release'
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: |
+          gh release upload --repo '${{ github.repository }}' '${{ github.ref_name }}' dist/* 
+
+          # Remove the Sigstore signatures from the dist folder - they would not be accepted by PyPI
+          rm dist/*.sigstore.json
+
+      - name: Publish distribution 📦 to PyPI
+        uses: pypa/gh-action-pypi-publish@release/v1
+        if: github.event_name == 'release'
+        
