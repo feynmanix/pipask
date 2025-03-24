@@ -8,9 +8,9 @@ class CheckResultType(str, Enum):
     FAILURE = ("failure", "red", "[red]✖[/red]")
     WARNING = ("warning", "yellow", "[yellow bold]![/yellow bold]")
 
-
     rich_color: str
     rich_icon: str
+
     def __new__(cls, value: str, rich_color: str, rich_icon: str):
         obj = str.__new__(cls, [value])
         obj._value_ = value
