@@ -1,0 +1,47 @@
+name: Vulnerability scan of the repo
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  repo-scan:
+    name: 'Trivy repo scan'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Run Trivy vulnerability scanner
+        uses: aquasecurity/trivy-action@master
+        with:
+          scan-type: 'fs'
+          trivy-config: "trivy-config.yaml"
+        env:
+          # env variables seems to be a more reliable way to configure trivy than inputs
+          TRIVY_FORMAT: table # we cannot use the GitHub-integrated sarif format without GitHub advanced security
+          TRIVY_OUTPUT: trivy-report.txt
+          TRIVY_EXIT_CODE: 1
+
+      - shell: bash
+        if: always()
+        # Print result so that one doesn't need to download zip files to see the result
+        run: |
+          cat trivy-report.txt
+          
+          echo "Trivy report:" >> $GITHUB_STEP_SUMMARY
+          echo '~~~' >> $GITHUB_STEP_SUMMARY
+          cat trivy-report.txt >> $GITHUB_STEP_SUMMARY
+          echo '~~~' >> $GITHUB_STEP_SUMMARY
+          
+          if echo "$REPORT_WITHOUT_TABLES" | grep -E '(HIGH|CRITICAL): [1-9]' > /dev/null; then
+            echo "::error::Found HIGH or CRITICAL vulnerabilities"
+          fi    
+          
+      - name: Upload report artifact
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: trivy-report.txt
+          path: trivy-report.txt
+
