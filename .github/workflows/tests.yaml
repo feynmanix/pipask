@@ -1,0 +1,40 @@
+name: Tests & Static Checks
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  tests:
+    name: 'Unit tests & static checks'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.10'
+          
+      - name: Install dependencies
+        run: |
+          pipx install poetry
+          poetry install --no-interaction
+
+      - name: Run tests
+        run: |
+          poetry run pytest .
+
+      - name: Run type check
+        run: |
+          poetry run pyright .
+
+      - name: Run linters
+        run: |
+          poetry run ruff check .
+
+      - name: Run bandit static analyzer
+        run: |
+          poetry run bandit -c pyproject.toml -r .
+
