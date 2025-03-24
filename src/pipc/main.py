@@ -3,7 +3,7 @@ from contextlib import aclosing
 
 from pipc.cli import ParsedArgs
 from pipc.infra.pip import pip_pass_through, get_pip_report
-from pipc.infra.pypi import PypiClient
+from pipc.infra.pypi import PypiClient, ReleaseResponse
 import sys
 
 import click
@@ -38,13 +38,13 @@ async def execute_checks(parsed_args: ParsedArgs) -> None:
     report = get_pip_report(parsed_args)
     packages_to_install = [package for package in report.install if package.requested]
     async with aclosing(PypiClient()) as pypi_client:
-        packages_info_futures = [
+        releases_info_futures = [
             pypi_client.get_release_info(package.metadata.name, package.metadata.version)
             for package in packages_to_install
         ]
-        packages_info = await asyncio.gather(*packages_info_futures)
-        for package_info in packages_info:
-            print(package_info)
+        releases_info : list[ReleaseResponse] = await asyncio.gather(*releases_info_futures)
+        for release_info in releases_info:
+            print(release_info.info.project_urls.recognized_repo_url())
 
 
 if __name__ == "__main__":

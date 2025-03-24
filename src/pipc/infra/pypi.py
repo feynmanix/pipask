@@ -1,16 +1,12 @@
-import re
+from pipc.infra.repo_client import REPO_URL_REGEX
 from datetime import datetime
 from typing import List, Optional
 
 import httpx
 from pydantic import BaseModel, Field
 
-# Same options as in Google's https://docs.deps.dev/api/v3/#getproject, without discontinued bitbucket
-_REPO_URL_REGEX = re.compile(r"^https://(?:github|gitlab)[.]com/[^/]+/[^/.]+")
-
-
 def _get_maybe_repo_url(url: str) -> str | None:
-    match = _REPO_URL_REGEX.match(url)
+    match = REPO_URL_REGEX.match(url)
     if match:
         return match.group(0)
     return None
@@ -66,7 +62,7 @@ class ReleaseResponse(BaseModel):
 # See https://docs.pypi.org/api/json/#get-a-release for API documentation
 class PypiClient:
     def __init__(self):
-        self.client = httpx.AsyncClient()
+        self.client = httpx.AsyncClient(follow_redirects=True)
 
     async def get_project_info(self, project_name: str) -> ProjectResponse | None:
         """Get project metadata from PyPI."""
