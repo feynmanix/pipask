@@ -5,6 +5,7 @@ from typing import List, Optional
 import httpx
 from pydantic import BaseModel, Field
 
+
 def _get_maybe_repo_url(url: str) -> str | None:
     match = REPO_URL_REGEX.match(url)
     if match:
