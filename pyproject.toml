@@ -1,5 +1,5 @@
 [project]
-name = "pipc"
+name = "pipask"
 version = "0.1.0"
 description = "Safer python package installation with audit and consent before install"
 authors = [
@@ -17,14 +17,14 @@ dependencies = [
 
 [project.urls]
 #homepage = ""
-repository = "https://github.com/feynmanix/pipc"
-documentation = "https://github.com/feynmanix/pipc/blob/main/README.md"
+repository = "https://github.com/feynmanix/pipask"
+documentation = "https://github.com/feynmanix/pipask/blob/main/README.md"
 
 [project.scripts]
-pipc = "pipc.main:cli"
+pipask = "pipask.main:cli"
 
 [tool.poetry]
-packages = [{ include = "pipc", from = "src" }]
+packages = [{ include = "pipask", from = "src" }]
 
 [tool.poetry.group.dev.dependencies]
 pyright = ">=1.1.391"
@@ -51,10 +51,10 @@ push = false
     'current_version = "{version}"',
     'version = "{version}"',
 ]
-"src/pipc/__init__.py" = ["{version}"]
+"src/pipask/__init__.py" = ["{version}"]
 
 [tool.pyright]
-include = ["pipc"]
+include = ["pipask"]
 exclude = [
     "**/__pycache__",
     "**/tests",

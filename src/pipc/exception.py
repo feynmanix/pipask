@@ -1,2 +1,0 @@
-class PipcException(Exception):
-    pass

@@ -6,8 +6,8 @@ import logging
 import click
 from pydantic import BaseModel
 
-from pipc.cli_helpers import ParsedArgs
-from pipc.exception import PipcException
+from pipask.cli_helpers import ParsedArgs
+from pipask.exception import PipaskException
 
 logger = logging.getLogger(__name__)
 
@@ -34,7 +34,7 @@ def pip_pass_through(args: list[str]) -> None:
 
 def get_pip_report(parsed_args: ParsedArgs) -> "PipReport":
     if "install" not in parsed_args.other_args:
-        raise PipcException("unexpected command")
+        raise PipaskException("unexpected command")
     pip_args = (
         [_get_python_executable(), "-m", "pip"]
         + parsed_args.other_args
@@ -50,7 +50,7 @@ def get_pip_report(parsed_args: ParsedArgs) -> "PipReport":
         logger.debug(
             f"Pip report subprocess failed after {time.time() - start_time:.2f}s with exit code {e.returncode}"
         )
-        raise PipcException(f"Error while getting pip report: {e}") from e
+        raise PipaskException(f"Error while getting pip report: {e}") from e
     return report
 
 

@@ -5,30 +5,30 @@ from contextlib import aclosing
 from typing import Awaitable
 
 from rich.prompt import Confirm
-from pipc.checks.repo_popularity import check_repo_popularity
-from pipc.checks.types import CheckResult
-from pipc.cli_helpers import ParsedArgs, CheckTask
-from pipc.infra.pip import pip_pass_through, get_pip_report
-from pipc.infra.pypi import PypiClient, ReleaseResponse
+from pipask.checks.repo_popularity import check_repo_popularity
+from pipask.checks.types import CheckResult
+from pipask.cli_helpers import ParsedArgs, CheckTask
+from pipask.infra.pip import pip_pass_through, get_pip_report
+from pipask.infra.pypi import PypiClient, ReleaseResponse
 import sys
 
 import click
 from rich.console import Console
 
-from pipc.infra.repo_client import RepoClient
-from pipc.cli_helpers import SimpleTaskProgress
-from pipc.infra.pip import PipReport
+from pipask.infra.repo_client import RepoClient
+from pipask.cli_helpers import SimpleTaskProgress
+from pipask.infra.pip import PipReport
 from rich.logging import RichHandler
 
-from pipc.report import print_report
+from pipask.report import print_report
 
 console = Console()
 
 # Get log level from environment variable, default to INFO if not set
-pipc_log_level = os.getenv("PIPC_LOG_LEVEL", "INFO").upper()
+pipask_log_level = os.getenv("PIPASK_LOG_LEVEL", "INFO").upper()
 log_format = "%(name)s - %(message)s"
 logging.basicConfig(level=logging.WARNING, format=log_format, handlers=[RichHandler(console=console)])
-logging.getLogger("pipc").setLevel(getattr(logging, pipc_log_level, logging.INFO))
+logging.getLogger("pipask").setLevel(getattr(logging, pipask_log_level, logging.INFO))
 
 
 # (see relevant pip commands at https://pip.pypa.io/en/stable/cli/pip_install/)
@@ -39,7 +39,7 @@ logging.getLogger("pipc").setLevel(getattr(logging, pipc_log_level, logging.INFO
 @click.option("--report", type=str)
 @click.pass_context
 def cli(ctx: click.Context, help: bool, dry_run: bool, report: str, no_deps: bool) -> None:
-    """pipc - safer python package installation with audit and consent."""
+    """pipask - safer python package installation with audit and consent."""
     all_args = sys.argv[1:]
     is_install_command = len(ctx.args) > 0 and ctx.args[0] == "install"
 

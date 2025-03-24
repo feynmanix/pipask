@@ -1,11 +1,11 @@
 import pytest
 from unittest.mock import AsyncMock, MagicMock
 
-from pipc.checks.repo_popularity import check_repo_popularity
-from pipc.checks.types import CheckResultType
-from pipc.infra.pypi import ReleaseResponse, ProjectInfo, ProjectUrls
-from pipc.infra.repo_client import RepoClient, RepoInfo
-from pipc.infra.pip import InstallationReportItem, InstallationReportItemMetadata, InstallationReportItemDownloadInfo
+from pipask.checks.repo_popularity import check_repo_popularity
+from pipask.checks.types import CheckResultType
+from pipask.infra.pypi import ReleaseResponse, ProjectInfo, ProjectUrls
+from pipask.infra.repo_client import RepoClient, RepoInfo
+from pipask.infra.pip import InstallationReportItem, InstallationReportItemMetadata, InstallationReportItemDownloadInfo
 
 PACKAGE_NAME = "package"
 PACKAGE_VERSION = "1.0.0"

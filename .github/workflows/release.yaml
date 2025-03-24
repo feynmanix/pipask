@@ -71,7 +71,7 @@ jobs:
       - tests
     environment:
       name: pypi
-      url: https://pypi.org/p/pipc
+      url: https://pypi.org/p/pipask
     permissions:
       id-token: write
       contents: write

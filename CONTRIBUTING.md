@@ -1,4 +1,4 @@
-# Contributing to pipc
+# Contributing to pipask
 
 This document provides guidelines and instructions for contributing to the project.
 
@@ -8,8 +8,8 @@ This document provides guidelines and instructions for contributing to the proje
 2. Install [Poetry](https://python-poetry.org/docs/#installation) for dependency management
 3. Clone the repository:
    ```bash
-   git clone https://github.com/feynmanix/pipc.git
-   cd pipc
+   git clone https://github.com/feynmanix/pipask.git
+   cd pipask
    ```
 4. (If needed) activate the desired python version
 5. Install dependencies:

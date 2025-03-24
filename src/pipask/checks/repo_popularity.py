@@ -1,9 +1,9 @@
 from typing import Awaitable
 
-from pipc.infra.pypi import ReleaseResponse
-from pipc.infra.repo_client import RepoClient
-from pipc.checks.types import CheckResult, CheckResultType
-from pipc.infra.pip import InstallationReportItem
+from pipask.infra.pypi import ReleaseResponse
+from pipask.infra.repo_client import RepoClient
+from pipask.checks.types import CheckResult, CheckResultType
+from pipask.infra.pip import InstallationReportItem
 
 
 async def check_repo_popularity(

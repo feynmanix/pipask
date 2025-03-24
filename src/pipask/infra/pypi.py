@@ -1,4 +1,4 @@
-from pipc.infra.repo_client import REPO_URL_REGEX
+from pipask.infra.repo_client import REPO_URL_REGEX
 from datetime import datetime
 from typing import List, Optional
 

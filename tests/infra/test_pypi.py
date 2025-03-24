@@ -1,4 +1,4 @@
-from pipc.infra.pypi import PypiClient
+from pipask.infra.pypi import PypiClient
 
 
 import pytest

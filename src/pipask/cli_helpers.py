@@ -6,7 +6,7 @@ from rich.text import Text
 from rich.spinner import Spinner
 from rich.progress import Task
 from rich.console import RenderableType
-from pipc.checks.types import CheckResultType
+from pipask.checks.types import CheckResultType
 from rich.console import Console
 
 

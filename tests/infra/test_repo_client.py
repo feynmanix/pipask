@@ -1,6 +1,6 @@
 from contextlib import aclosing
 
-from pipc.infra.repo_client import RepoClient
+from pipask.infra.repo_client import RepoClient
 import pytest
 
 

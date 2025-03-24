@@ -1,6 +1,6 @@
 from rich.console import Console
 
-from pipc.checks.types import CheckResult, CheckResultType
+from pipask.checks.types import CheckResult, CheckResultType
 
 
 def print_report(check_results: list[CheckResult], console: Console) -> None:

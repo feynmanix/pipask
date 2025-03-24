@@ -1,6 +1,6 @@
 from typing import Any
 
-from pipc.main import cli, ParsedArgs
+from pipask.main import cli, ParsedArgs
 
 import pytest
 
@@ -41,7 +41,7 @@ import pytest
     ],
 )
 def test_parses_cli_args(args: list[str], expected_positional: list[str], expected_options: dict[str, Any]):
-    ctx = cli.make_context("pipc", args)
+    ctx = cli.make_context("pipask", args)
     parsed_args = ParsedArgs.from_click_context(ctx)
     assert parsed_args.other_args == expected_positional
     assert parsed_args.help == expected_options["help"]

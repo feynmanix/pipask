@@ -1,5 +1,5 @@
-from pipc.cli_helpers import ParsedArgs
-from pipc.infra.pip import get_pip_report
+from pipask.cli_helpers import ParsedArgs
+from pipask.infra.pip import get_pip_report
 
 
 import pytest
