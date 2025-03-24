@@ -47,4 +47,3 @@ def test_parses_cli_args(args: list[str], expected_positional: list[str], expect
     assert parsed_args.help == expected_options["help"]
     assert parsed_args.dry_run == expected_options["dry_run"]
     assert parsed_args.report == expected_options["report"]
-

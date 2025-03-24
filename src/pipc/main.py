@@ -1,6 +1,5 @@
 import asyncio
 from contextlib import aclosing
-from dataclasses import dataclass
 
 from pipc.cli import ParsedArgs
 from pipc.infra.pip import pip_pass_through, get_pip_report
@@ -39,11 +38,14 @@ async def execute_checks(parsed_args: ParsedArgs) -> None:
     report = get_pip_report(parsed_args)
     packages_to_install = [package for package in report.install if package.requested]
     async with aclosing(PypiClient()) as pypi_client:
-        packages_info_futures = [pypi_client.get_release_info(package.metadata.name, package.metadata.version) for package in packages_to_install]
+        packages_info_futures = [
+            pypi_client.get_release_info(package.metadata.name, package.metadata.version)
+            for package in packages_to_install
+        ]
         packages_info = await asyncio.gather(*packages_info_futures)
         for package_info in packages_info:
             print(package_info)
-        
+
 
 if __name__ == "__main__":
     cli()

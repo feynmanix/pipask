@@ -25,7 +25,8 @@ def pip_pass_through(args: list[str]) -> None:
 
 
 def get_pip_report(parsed_args: ParsedArgs) -> "PipReport":
-    assert "install" in parsed_args.other_args
+    if "install" not in parsed_args.other_args:
+        raise PipcException("unexpected command")
     pip_args = (
         [_get_python_executable(), "-m", "pip"] + parsed_args.other_args + ["--dry-run", "--quiet", "--report", "-"]
     )

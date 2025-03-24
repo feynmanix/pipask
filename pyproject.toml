@@ -84,4 +84,5 @@ line-length = 120
 
 [tool.bandit]
 exclude_dirs = ["tests"]
+skips = ["B404", "B603"]
 
