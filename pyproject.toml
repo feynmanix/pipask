@@ -74,8 +74,13 @@ log_level = "warning"
 asyncio_default_fixture_loop_scope = "function"
 asyncio_mode = "auto"
 
+markers = [
+    "integration: marks tests as integration tests"
+]
+
 [tool.ruff]
 line-length = 120
 
 [tool.bandit]
 exclude_dirs = ["tests"]
+
