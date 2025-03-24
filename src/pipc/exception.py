@@ -1,0 +1,3 @@
+
+class PipcException(Exception):
+    pass

@@ -11,7 +11,8 @@ keywords = ["pip", "security"]
 license = { file = "LICENSE" }
 dependencies = [
     "click (>=8.1.8,<9.0.0)",
-    "pydantic (>=2.10.6,<3.0.0)"
+    "pydantic (>=2.10.6,<3.0.0)",
+    "httpx (>=0.28.1,<0.29.0)"
 ]
 
 [project.urls]

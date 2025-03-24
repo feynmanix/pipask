@@ -1,26 +1,16 @@
+import asyncio
+from contextlib import aclosing
 from dataclasses import dataclass
-from pipc.installers.pip import pip_pass_through
+
+from pipc.cli import ParsedArgs
+from pipc.infra.pip import pip_pass_through, get_pip_report
+from pipc.infra.pypi import PypiClient
 import sys
 
 import click
 
 # (see relevant pip commands at https://pip.pypa.io/en/stable/cli/pip_install/)
 
-@dataclass
-class ParsedArgs:
-    other_args: list[str]
-    help: bool
-    dry_run: bool
-    report: str | None
-
-    @staticmethod
-    def from_click_context(ctx: click.Context) -> "ParsedArgs":
-        return ParsedArgs(
-            other_args=ctx.args,
-            help=ctx.params["help"],
-            dry_run=ctx.params["dry_run"],
-            report=ctx.params["report"] or None,
-        )
 
 @click.command(context_settings=dict(ignore_unknown_options=True, allow_extra_args=True))
 @click.option("-h", "--help", is_flag=True)
@@ -36,7 +26,7 @@ def cli(ctx: click.Context, help: bool, dry_run: bool, report: str) -> None:
         pip_pass_through(all_args)
         return
     parsed_args = ParsedArgs.from_click_context(ctx)
-    execute_checks(parsed_args)
+    asyncio.run(execute_checks(parsed_args))
     if click.confirm("Do you want to continue?"):
         pip_pass_through(all_args)
     else:
@@ -44,9 +34,16 @@ def cli(ctx: click.Context, help: bool, dry_run: bool, report: str) -> None:
         sys.exit(2)
 
 
-def execute_checks(parsed_args: ParsedArgs) -> None:
+async def execute_checks(parsed_args: ParsedArgs) -> None:
     click.echo("Checking stuff...")
-
+    report = get_pip_report(parsed_args)
+    packages_to_install = [package for package in report.install if package.requested]
+    async with aclosing(PypiClient()) as pypi_client:
+        packages_info_futures = [pypi_client.get_release_info(package.metadata.name, package.metadata.version) for package in packages_to_install]
+        packages_info = await asyncio.gather(*packages_info_futures)
+        for package_info in packages_info:
+            print(package_info)
+        
 
 if __name__ == "__main__":
     cli()
