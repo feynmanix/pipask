@@ -24,6 +24,20 @@ This document provides guidelines and instructions for contributing to the proje
 - Run tests with `poetry run pytest`
 - Run static checks and formatting using `./run-checks.sh`
 
+## Releasing
+1. Bump version before releasing with `bumpver`, e.g.:
+   ```bash
+   poetry run bumpver update --minor
+   ```
+2. Push the created tag to the repository, e.g.:
+   ```bash
+   git push origin tag 1.0.0
+   # OR
+   # git push --tags
+   ```
+2. Create a [new release](https://github.com/feynmanix/pipask/releases/new) with the newly created tag. The name of the release should correspond to the version number (e.g., `v1.0.0`).
+
+
 
 ## Reporting Issues
 
