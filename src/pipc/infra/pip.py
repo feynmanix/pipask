@@ -6,7 +6,7 @@ import logging
 import click
 from pydantic import BaseModel
 
-from pipc.cli import ParsedArgs
+from pipc.cli_helpers import ParsedArgs
 from pipc.exception import PipcException
 
 logger = logging.getLogger(__name__)
@@ -36,7 +36,9 @@ def get_pip_report(parsed_args: ParsedArgs) -> "PipReport":
     if "install" not in parsed_args.other_args:
         raise PipcException("unexpected command")
     pip_args = (
-        [_get_python_executable(), "-m", "pip"] + parsed_args.other_args + ["--dry-run", "--quiet", "--report", "-"]
+        [_get_python_executable(), "-m", "pip"]
+        + parsed_args.other_args
+        + ["--dry-run", "--quiet", "--no-deps", "--report", "-"] # No-deps to speed up the resolution
     )
     logger.debug(f"Running pip report subprocess: {' '.join(pip_args)}")
     start_time = time.time()
@@ -67,6 +69,10 @@ class InstallationReportItem(BaseModel):
     download_info: InstallationReportItemDownloadInfo
     requested: bool
     is_yanked: bool
+
+    @property
+    def pinned_requirement(self) -> str:
+        return f"{self.metadata.name}=={self.metadata.version}"
 
 
 class PipReport(BaseModel):
