@@ -1,0 +1,15 @@
+dependency-tree: true
+list-all-pkgs: false
+exit-code: 1
+severity:
+  - HIGH
+  - CRITICAL
+scan:
+  skip-dirs:
+    - .cache/trivy
+  scanners:
+    - vuln
+    - secret
+    - config
+vulnerability:
+  ignore-unfixed: true

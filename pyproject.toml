@@ -1,0 +1,72 @@
+[project]
+requires-python = ">=3.10,<4.0"
+
+[tool.poetry]
+name = "pipc"
+version = "1.0.0"
+description = "Safer python package installation with audit and consent before install"
+authors = ["Jan Michelfeit"]
+license = "MIT License"
+repository = 'https://github.com/feynmanix/pipc'
+documentation = "https://github.com/feynmanix/pipc/blob/main/README.md"
+readme = "README.md"
+keywords = ["pip", "security"]
+packages = [{ include = "pipc", from = "src" }]
+
+[tool.poetry.dependencies]
+python = ">=3.10,<4.0"
+
+[tool.poetry.group.dev.dependencies]
+pyright = ">=1.1.391"
+pytest = ">=8.3.4"
+bumpver = "^2024.1130"
+pytest-asyncio = ">=0.25.0"
+bandit = ">=1.8.0"
+ruff = ">=0.8.4"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
+
+[tool.bumpver]
+current_version = "1.0.0"
+version_pattern = "MAJOR.MINOR.PATCH"
+commit_message = "bump version {old_version} -> {new_version}"
+commit = true
+tag = true
+push = false
+
+[tool.bumpver.file_patterns]
+"pyproject.toml" = [
+    'current_version = "{version}"',
+    'version = "{version}"',
+]
+"src/pipc/__init__.py" = ["{version}"]
+
+[tool.pyright]
+include = ["pipc"]
+exclude = [
+    "**/__pycache__",
+    "**/tests",
+]
+ignore = []
+
+reportMissingImports = true
+reportMissingTypeStubs = false
+pythonVersion = "3.10"
+
+[tool.pytest.ini_options]
+minversion = "8.0"
+addopts = "--import-mode=importlib -rA --color=yes"
+testpaths = ["tests"]
+log_level = "warning"
+
+# asyncio:
+asyncio_default_fixture_loop_scope = "function"
+asyncio_mode = "auto"
+
+[tool.ruff]
+line-length = 120
+
+[tool.bandit]
+exclude_dirs = ["tests"]
