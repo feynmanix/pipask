@@ -1,11 +1,15 @@
 import subprocess
 import sys
 import json
+import time
+import logging
 import click
 from pydantic import BaseModel
 
 from pipc.cli import ParsedArgs
 from pipc.exception import PipcException
+
+logger = logging.getLogger(__name__)
 
 
 def _get_python_executable() -> str:
@@ -18,10 +22,14 @@ def _get_python_executable() -> str:
 
 def pip_pass_through(args: list[str]) -> None:
     pip_args = [_get_python_executable(), "-m", "pip"] + args
+    logger.debug(f"Running subprocess: {' '.join(pip_args)}")
+    start_time = time.time()
     try:
         subprocess.run(pip_args, check=True, text=True, stdout=sys.stdout, stderr=sys.stderr)
+        logger.debug(f"Subprocess completed in {time.time() - start_time:.2f}s")
     except subprocess.CalledProcessError as e:
-        sys.exit(e.returncode)  # Preserve the original exit code
+        logger.debug(f"Subprocess failed after {time.time() - start_time:.2f}s with exit code {e.returncode}")
+        sys.exit(e.returncode)
 
 
 def get_pip_report(parsed_args: ParsedArgs) -> "PipReport":
@@ -30,10 +38,16 @@ def get_pip_report(parsed_args: ParsedArgs) -> "PipReport":
     pip_args = (
         [_get_python_executable(), "-m", "pip"] + parsed_args.other_args + ["--dry-run", "--quiet", "--report", "-"]
     )
+    logger.debug(f"Running pip report subprocess: {' '.join(pip_args)}")
+    start_time = time.time()
     try:
         result = subprocess.run(pip_args, check=True, text=True, capture_output=True)
+        logger.debug(f"Pip report subprocess completed in {time.time() - start_time:.2f}s")
         report = PipReport.model_validate(json.loads(result.stdout))
     except subprocess.CalledProcessError as e:
+        logger.debug(
+            f"Pip report subprocess failed after {time.time() - start_time:.2f}s with exit code {e.returncode}"
+        )
         raise PipcException(f"Error while getting pip report: {e}") from e
     return report
 

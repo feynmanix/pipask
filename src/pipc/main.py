@@ -1,4 +1,6 @@
 import asyncio
+import logging
+import os
 from contextlib import aclosing
 
 from pipc.cli import ParsedArgs
@@ -10,10 +12,15 @@ import click
 
 from pipc.infra.repo_client import RepoClient
 
+# Get log level from environment variable, default to INFO if not set
+log_level = os.getenv("PIPC_LOG_LEVEL", "INFO").upper()
+logging.basicConfig(
+    level=logging.INFO, format="%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+)
+logging.getLogger("pipc").setLevel(getattr(logging, log_level, logging.INFO))
+
 
 # (see relevant pip commands at https://pip.pypa.io/en/stable/cli/pip_install/)
-
-
 @click.command(context_settings=dict(ignore_unknown_options=True, allow_extra_args=True))
 @click.option("-h", "--help", is_flag=True)
 @click.option("--dry-run", is_flag=True)

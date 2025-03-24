@@ -4,6 +4,10 @@ from typing import List, Optional
 
 import httpx
 from pydantic import BaseModel, Field
+import logging
+import time
+
+logger = logging.getLogger(__name__)
 
 
 def _get_maybe_repo_url(url: str) -> str | None:
@@ -68,7 +72,9 @@ class PypiClient:
     async def get_project_info(self, project_name: str) -> ProjectResponse | None:
         """Get project metadata from PyPI."""
         url = f"https://pypi.org/pypi/{project_name}/json"
+        start_time = time.time()
         response = await self.client.get(url)
+        logger.debug(f"GET {url} took {time.time() - start_time:.2f}s")
         if response.status_code == 404:
             return None
         response.raise_for_status()
@@ -77,7 +83,9 @@ class PypiClient:
     async def get_release_info(self, project_name: str, version: str) -> ReleaseResponse | None:
         """Get metadata for a specific project release from PyPI."""
         url = f"https://pypi.org/pypi/{project_name}/{version}/json"
+        start_time = time.time()
         response = await self.client.get(url)
+        logger.debug(f"GET {url} took {time.time() - start_time:.2f}s")
         if response.status_code == 404:
             return None
         response.raise_for_status()
