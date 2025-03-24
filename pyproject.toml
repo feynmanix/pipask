@@ -10,7 +10,8 @@ requires-python = ">=3.10"
 keywords = ["pip", "security"]
 license = { file = "LICENSE" }
 dependencies = [
-    "click (>=8.1.8,<9.0.0)"
+    "click (>=8.1.8,<9.0.0)",
+    "pydantic (>=2.10.6,<3.0.0)"
 ]
 
 [project.urls]
