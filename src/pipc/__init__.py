@@ -3,4 +3,4 @@ See https://github.com/feynmanix/pipc/blob/main/README.md for more information.
 """
 
 # Version of the package
-__version__ = "1.0.0"
+__version__ = "0.1.0"
