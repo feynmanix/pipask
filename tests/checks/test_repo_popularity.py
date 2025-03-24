@@ -2,7 +2,7 @@ import pytest
 from unittest.mock import AsyncMock, MagicMock
 
 from pipc.checks.repo_popularity import check_repo_popularity
-from pipc.checks.types import CheckResult, CheckResultType
+from pipc.checks.types import CheckResultType
 from pipc.infra.pypi import ReleaseResponse, ProjectInfo, ProjectUrls
 from pipc.infra.repo_client import RepoClient, RepoInfo
 from pipc.infra.pip import InstallationReportItem, InstallationReportItemMetadata, InstallationReportItemDownloadInfo

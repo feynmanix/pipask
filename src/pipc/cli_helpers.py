@@ -39,7 +39,7 @@ class CheckTask:
         elif partial_result is False:
             partial_result = CheckResultType.FAILURE
         self._result = CheckResultType.get_worst(self._result, partial_result)
-        self._progress.update(self._task_id, advance=1,result=self._result)
+        self._progress.update(self._task_id, advance=1, result=self._result)
 
     def start(self):
         self._progress.start_task(self._task_id)
@@ -60,7 +60,6 @@ class SimpleTaskProgress:
 
     def add_task(self, description: str, start: bool = True, total: int = 1) -> CheckTask:
         return CheckTask(self.progress, self.progress.add_task(description, start=start, total=total))
-
 
 
 class _SpinnerAndStatusColumn(ProgressColumn):

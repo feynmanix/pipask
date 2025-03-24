@@ -38,7 +38,7 @@ def get_pip_report(parsed_args: ParsedArgs) -> "PipReport":
     pip_args = (
         [_get_python_executable(), "-m", "pip"]
         + parsed_args.other_args
-        + ["--dry-run", "--quiet", "--no-deps", "--report", "-"] # No-deps to speed up the resolution
+        + ["--dry-run", "--quiet", "--no-deps", "--report", "-"]  # No-deps to speed up the resolution
     )
     logger.debug(f"Running pip report subprocess: {' '.join(pip_args)}")
     start_time = time.time()
