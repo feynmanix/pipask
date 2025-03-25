@@ -25,6 +25,10 @@ jobs:
         run: |
           poetry run pytest .
 
+      - name: Run integration tests
+        run: |
+          poetry run pytest -m integration .
+
       - name: Run type check
         run: |
           poetry run pyright .
