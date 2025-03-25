@@ -22,8 +22,37 @@ This document provides guidelines and instructions for contributing to the proje
 
 - Write tests for new functionality
 - Run tests with `poetry run pytest`
-- Run **integration** tests with `poetry run pytest -m integration`
+- Run **integration** tests with `poetry run pytest -m integration` (requires internet access)
 - Run static checks and formatting using `./run-checks.sh`
+
+## Compatibility testing:
+
+To ensure pipask works across different environments, test various installation methods and platforms:
+
+| Installation Method of `pipask` | Execution environment | Unix | Windows |
+|---------------------------------|-----------------------|------|---------|
+| pipx                            | Global                | ✅   |    |
+| pipx                            | venv                  | ✅   |    |
+| Global pip                      | Global                | ✅   |    |
+| Global pip                      | venv                  | ✅   |    |
+| venv pip                        | venv                  | ✅   |    |
+
+Other edge cases to consider (some may not be currently supported):
+- installing extras (e.g. `pipask install black[d]`)
+- installing from a requirements file (e.g. `pipask install -r requirements.txt`)
+- installing from
+   - local directory (e.g. `pipask install .`)
+   - git (e.g. `pipask install git+https://github.com/feynmanix/pipask.git`)
+   - a file (e.g. `pipask install pipask-0.1.0-py3-none-any.whl`)
+   - alternative package repository (e.g. `pipask install --index-url https://pypi.org/simple/ requests`)
+- editable installs
+- `#egg=name` syntax 
+- installation flags
+  - `--user`
+  - `--upgrade` 
+  - `--force-reinstall`
+- installing an already installed package
+
 
 ## Releasing
 1. Bump version before releasing with `bumpver`, e.g.:
@@ -37,8 +66,6 @@ This document provides guidelines and instructions for contributing to the proje
    # git push --tags
    ```
 2. Create a [new release](https://github.com/feynmanix/pipask/releases/new) with the newly created tag. The name of the release should correspond to the version number (e.g., `v1.0.0`).
-
-
 
 ## Reporting Issues
 

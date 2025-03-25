@@ -1,3 +1,4 @@
+import os
 import subprocess
 import sys
 import json
@@ -12,14 +13,13 @@ logger = logging.getLogger(__name__)
 
 
 def _get_pip_command() -> list[str]:
-    # Use the currently activated python so that the activated environment is used
-    return ["pip"]
-
-    # python_executable = sys.executable
-    # if not python_executable:
-    #     click.echo("No Python executable found.")
-    #     sys.exit(1)
-    # return [python_executable, "-m", "-pip"]
+    # Use the currently activated python so that the installation is executed into the activated environment
+    venv_path = os.getenv("VIRTUAL_ENV")
+    if venv_path:
+        python_path = os.path.join(venv_path, "bin", "python")
+        return [python_path, "-m", "pip"]
+    else:
+        return ["pip"]
 
 
 def pip_pass_through(args: list[str]) -> None:
