@@ -94,4 +94,4 @@ async def test_low_star_count():
     result = await check_repo_popularity(REPORT_ITEM, release_info(), repo_client)
 
     assert result.result_type == CheckResultType.WARNING
-    assert result.message == "[bold]Repository has less than 100 stars: 50"
+    assert result.message == "[bold][link=https://github.com/user/repo]Repository[/link] has less than 100 stars: 50"
