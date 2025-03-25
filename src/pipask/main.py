@@ -8,7 +8,7 @@ from rich.prompt import Confirm
 from pipask.checks.repo_popularity import check_repo_popularity
 from pipask.checks.types import CheckResult
 from pipask.cli_helpers import ParsedArgs, CheckTask
-from pipask.infra.pip import pip_pass_through, get_pip_report
+from pipask.infra.pip import InstallationReportItem, pip_pass_through, get_pip_report
 from pipask.infra.pypi import PypiClient, ReleaseResponse
 import sys
 
@@ -17,7 +17,6 @@ from rich.console import Console
 
 from pipask.infra.repo_client import RepoClient
 from pipask.cli_helpers import SimpleTaskProgress
-from pipask.infra.pip import PipReport
 from rich.logging import RichHandler
 
 from pipask.report import print_report
@@ -52,6 +51,7 @@ def main(args: ParsedArgs):
         pip_pass_through(args.raw_args)
         return
 
+    check_results = None
     with SimpleTaskProgress(console=console) as progress:
         pip_report_task = progress.add_task("Resolving dependencies to install with pip")
         try:
@@ -60,9 +60,19 @@ def main(args: ParsedArgs):
         except Exception as e:
             pip_report_task.update(False)
             raise e
-        check_results = asyncio.run(execute_checks(pip_report, progress))
-    print_report(check_results, console)
 
+        requested_packages = [package for package in pip_report.install if package.requested]
+        if len(requested_packages) > 0:
+            check_results = asyncio.run(execute_checks(requested_packages, progress))
+
+    if len(requested_packages) == 0:
+        console.print("  No new packages to install\n")
+        pip_pass_through(args.raw_args)
+        return
+
+    # Intentionally printing report after the progress monitor is closed
+    assert check_results is not None
+    print_report(check_results, console)
     if Confirm.ask("\n[green]?[/green] Would you like to continue installing package(s)?"):
         pip_pass_through(args.raw_args)
     else:
@@ -70,8 +80,9 @@ def main(args: ParsedArgs):
         sys.exit(2)
 
 
-async def execute_checks(pip_report: PipReport, progress: SimpleTaskProgress) -> list[CheckResult]:
-    packages_to_install = [package for package in pip_report.install if package.requested]
+async def execute_checks(
+    packages_to_install: list[InstallationReportItem], progress: SimpleTaskProgress
+) -> list[CheckResult]:
     async with aclosing(PypiClient()) as pypi_client, aclosing(RepoClient()) as repo_client:
         # TODO: create in advance
         repo_popularity_task: CheckTask = progress.add_task(
