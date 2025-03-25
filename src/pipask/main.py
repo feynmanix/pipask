@@ -40,18 +40,22 @@ logging.getLogger("pipask").setLevel(getattr(logging, pipask_log_level, logging.
 @click.pass_context
 def cli(ctx: click.Context, help: bool, dry_run: bool, report: str, no_deps: bool) -> None:
     """pipask - safer python package installation with audit and consent."""
-    all_args = sys.argv[1:]
-    is_install_command = len(ctx.args) > 0 and ctx.args[0] == "install"
+    parsed_args = ParsedArgs.from_click_context(ctx)
+    main(parsed_args)
 
-    if not is_install_command or help or dry_run:
+
+def main(args: ParsedArgs):
+    is_install_command = len(args.other_args) > 0 and args.other_args[0] == "install"
+
+    if not is_install_command or args.help or args.dry_run:
         # Only run when actually installing something
-        pip_pass_through(all_args)
+        pip_pass_through(args.raw_args)
         return
 
     with SimpleTaskProgress(console=console) as progress:
         pip_report_task = progress.add_task("Resolving dependencies to install with pip")
         try:
-            pip_report = get_pip_report(ParsedArgs.from_click_context(ctx))
+            pip_report = get_pip_report(args)
             pip_report_task.update(True)
         except Exception as e:
             pip_report_task.update(False)
@@ -60,9 +64,9 @@ def cli(ctx: click.Context, help: bool, dry_run: bool, report: str, no_deps: boo
     print_report(check_results, console)
 
     if Confirm.ask("\n[green]?[/green] Would you like to continue installing package(s)?"):
-        pip_pass_through(all_args)
+        pip_pass_through(args.raw_args)
     else:
-        click.echo("Aborted!")
+        console.print("[yellow]Aborted!")
         sys.exit(2)
 
 

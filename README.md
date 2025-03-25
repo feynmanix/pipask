@@ -2,7 +2,7 @@
 
 # Usage
 1. Install `pipask` with `pip install pipask`.
-2. Once installed, you can use `pipask` as a drop-in replacement for `pip`.
+2. Once installed, you can use `pipask` as a drop-in replacement for `pip`:
     ```bash
     pipask install requests
     ```

@@ -8,6 +8,7 @@ from rich.progress import Task
 from rich.console import RenderableType
 from pipask.checks.types import CheckResultType
 from rich.console import Console
+import sys
 
 
 @dataclass
@@ -16,6 +17,7 @@ class ParsedArgs:
     help: bool
     dry_run: bool
     report: str | None
+    raw_args: list[str]
 
     @staticmethod
     def from_click_context(ctx: click.Context) -> "ParsedArgs":
@@ -24,6 +26,7 @@ class ParsedArgs:
             help=ctx.params["help"],
             dry_run=ctx.params["dry_run"],
             report=ctx.params["report"] or None,
+            raw_args=sys.argv[1:]
         )
 
 
