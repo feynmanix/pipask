@@ -69,9 +69,10 @@ def main(args: ParsedArgs):
         console.print("  No new packages to install\n")
         pip_pass_through(args.raw_args)
         return
+    elif check_results is None:
+        raise Exception("No checks were performed. Aborting.")
 
     # Intentionally printing report after the progress monitor is closed
-    assert check_results is not None
     print_report(check_results, console)
     if Confirm.ask("\n[green]?[/green] Would you like to continue installing package(s)?"):
         pip_pass_through(args.raw_args)

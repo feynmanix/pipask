@@ -31,4 +31,4 @@ alias pip='pipask'
 ```
 
 # Development
-See [CONTRIBUTING.md](CONTRIBUTING.md) for development guidance.
+See [CONTRIBUTING.md](https://github.com/feynmanix/pipask/blob/main/CONTRIBUTING.md) for development guidance.
