@@ -27,7 +27,7 @@ async def test_pypi_gets_non_existent_release_info(pypi_client: PypiClient):
 @pytest.mark.parametrize(
     "project_name,expected_url",
     [
-        ("pyfluent-iterables", "https://github.com/mifeet/pyfluent-iterables"), # Intentionally using an obsolete URL
+        ("pyfluent-iterables", "https://github.com/mifeet/pyfluent-iterables"),  # Intentionally using an obsolete URL
         ("fastapi", "https://github.com/fastapi/fastapi"),
         ("torch", None),
         ("huggingface-hub", "https://github.com/huggingface/huggingface_hub"),

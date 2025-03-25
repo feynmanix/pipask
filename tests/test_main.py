@@ -64,7 +64,7 @@ def test_installs_package_in_venv(tmp_path: Path):
     venv_python: str = venv_ctx.env_exe
 
     # Prepare arguments
-    args =  ["install", "--no-input", "pyfluent-iterables"]
+    args = ["install", "--no-input", "pyfluent-iterables"]
     click_ctx = cli.make_context("pipask", list(args))
     parsed_args = ParsedArgs.from_click_context(click_ctx)
     parsed_args.raw_args = list(args)
@@ -82,9 +82,6 @@ def test_installs_package_in_venv(tmp_path: Path):
 
 def is_installed(executable: str, package_name: str) -> bool:
     result = subprocess.run(
-        [executable, "-c", f"import {package_name.replace('-', '_')}"],
-        check=False,
-        capture_output=True,
-        text=True
+        [executable, "-c", f"import {package_name.replace('-', '_')}"], check=False, capture_output=True, text=True
     )
     return result.returncode == 0

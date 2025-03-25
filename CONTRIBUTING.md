@@ -22,6 +22,7 @@ This document provides guidelines and instructions for contributing to the proje
 
 - Write tests for new functionality
 - Run tests with `poetry run pytest`
+- Run **integration** tests with `poetry run pytest -m integration`
 - Run static checks and formatting using `./run-checks.sh`
 
 ## Releasing

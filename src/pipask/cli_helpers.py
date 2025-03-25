@@ -26,7 +26,7 @@ class ParsedArgs:
             help=ctx.params["help"],
             dry_run=ctx.params["dry_run"],
             report=ctx.params["report"] or None,
-            raw_args=sys.argv[1:]
+            raw_args=sys.argv[1:],
         )
 
 
