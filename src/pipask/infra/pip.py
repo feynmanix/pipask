@@ -4,7 +4,7 @@ import sys
 import json
 import time
 import logging
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 from pipask.cli_helpers import ParsedArgs
 from pipask.exception import PipaskException
@@ -70,7 +70,7 @@ class InstallationReportItem(BaseModel):
     metadata: InstallationReportItemMetadata
     download_info: InstallationReportItemDownloadInfo
     requested: bool
-    is_yanked: bool
+    is_yanked: bool = Field(False)
 
     @property
     def pinned_requirement(self) -> str:
