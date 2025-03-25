@@ -3,7 +3,6 @@ import sys
 import json
 import time
 import logging
-import click
 from pydantic import BaseModel
 
 from pipask.cli_helpers import ParsedArgs
@@ -12,16 +11,19 @@ from pipask.exception import PipaskException
 logger = logging.getLogger(__name__)
 
 
-def _get_python_executable() -> str:
-    python_executable = sys.executable
-    if not python_executable:
-        click.echo("No Python executable found.")
-        sys.exit(1)
-    return python_executable
+def _get_pip_command() -> list[str]:
+    # Use the currently activated python so that the activated environment is used
+    return ["pip"]
+
+    # python_executable = sys.executable
+    # if not python_executable:
+    #     click.echo("No Python executable found.")
+    #     sys.exit(1)
+    # return [python_executable, "-m", "-pip"]
 
 
 def pip_pass_through(args: list[str]) -> None:
-    pip_args = [_get_python_executable(), "-m", "pip"] + args
+    pip_args = _get_pip_command() + args
     logger.debug(f"Running subprocess: {' '.join(pip_args)}")
     start_time = time.time()
     try:
@@ -36,7 +38,7 @@ def get_pip_report(parsed_args: ParsedArgs) -> "PipReport":
     if "install" not in parsed_args.other_args:
         raise PipaskException("unexpected command")
     pip_args = (
-        [_get_python_executable(), "-m", "pip"]
+        _get_pip_command()
         + parsed_args.other_args
         + ["--dry-run", "--quiet", "--no-deps", "--report", "-"]  # No-deps to speed up the resolution
     )
