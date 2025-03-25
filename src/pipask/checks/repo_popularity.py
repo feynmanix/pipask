@@ -22,19 +22,20 @@ async def check_repo_popularity(
             pkg, result_type=CheckResultType.FAILURE, message=f"Declared repository not found: {repo_url}"
         )
 
+    formatted_repository = f"[link={repo_url}]Repository[/link]"
     if repo_info.star_count > 1000:
         return CheckResult(
-            pkg, result_type=CheckResultType.SUCCESS, message=f"Repository has {repo_info.star_count} stars"
+            pkg, result_type=CheckResultType.SUCCESS, message=f"{formatted_repository} has {repo_info.star_count} stars"
         )
     elif repo_info.star_count > 100:
         return CheckResult(
             pkg,
             result_type=CheckResultType.WARNING,
-            message=f"Repository has less than 1000 stars: {repo_info.star_count}",
+            message=f"{formatted_repository} has less than 1000 stars: {repo_info.star_count}",
         )
     else:
         return CheckResult(
             pkg,
             result_type=CheckResultType.WARNING,
-            message=f"[bold]Repository has less than 100 stars: {repo_info.star_count}",
+            message=f"[bold]{formatted_repository} has less than 100 stars: {repo_info.star_count}",
         )

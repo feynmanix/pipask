@@ -1,4 +1,4 @@
-# pipask: pip with consent
+# pipask: pip with informed consent
 
 # Installation
 The recommended way to install `pipask` is with [pipx](https://pipx.pypa.io/stable/#install-pipx) so that `pipask` dependencies are isolated from the rest of your system:
@@ -16,7 +16,7 @@ pip install pipask
     ```bash
     pipask install 'requests>=2.0.0'
     ```
-2. `pipask` will perform checks on the requested packages to be installed (i.e., it will *not* check transitive dependencies).
+2. `pipask` will perform checks on the requested packages to be installed (i.e., it will *not* check *transitive* dependencies).
 3. `pipask` will print a report with the results and prompt you whether to continue with the installation.
 4. If you proceed, `pipask` will hand over the actual installation to `pip`.
 
@@ -29,6 +29,11 @@ In order to use `pipask` as a drop-in replacement for `pip`, you can create an a
 ```bash
 alias pip='pipask'
 ```
+
+# Checks
+Currently, the only check is for the popularity of the source repository as measured by the number of stars on GitHub or GitLab.
+
+More checks will be added in the future.
 
 # Development
 See [CONTRIBUTING.md](https://github.com/feynmanix/pipask/blob/main/CONTRIBUTING.md) for development guidance.
