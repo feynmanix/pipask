@@ -6,10 +6,12 @@ from typing import Awaitable
 
 from rich.prompt import Confirm
 from pipask.checks.repo_popularity import check_repo_popularity
+from pipask.checks.package_downloads import check_package_downloads
 from pipask.checks.types import CheckResult
 from pipask.cli_helpers import ParsedArgs, CheckTask
 from pipask.infra.pip import InstallationReportItem, pip_pass_through, get_pip_report
 from pipask.infra.pypi import PypiClient, ReleaseResponse
+from pipask.infra.pypistats import PypiStatsClient
 import sys
 
 import click
@@ -84,10 +86,17 @@ def main(args: ParsedArgs):
 async def execute_checks(
     packages_to_install: list[InstallationReportItem], progress: SimpleTaskProgress
 ) -> list[CheckResult]:
-    async with aclosing(PypiClient()) as pypi_client, aclosing(RepoClient()) as repo_client:
+    async with (
+        aclosing(PypiClient()) as pypi_client,
+        aclosing(RepoClient()) as repo_client,
+        aclosing(PypiStatsClient()) as pypi_stats_client,
+    ):
         # TODO: create in advance
         repo_popularity_task: CheckTask = progress.add_task(
             "Checking repository popularity", total=len(packages_to_install)
+        )
+        package_downloads_task: CheckTask = progress.add_task(
+            "Checking package download stats", total=len(packages_to_install)
         )
         releases_info_futures: list[Awaitable[ReleaseResponse | None]] = [
             asyncio.create_task(pypi_client.get_release_info(package.metadata.name, package.metadata.version))
@@ -98,6 +107,10 @@ async def execute_checks(
         for package, releases_info_future in zip(packages_to_install, releases_info_futures):
             check_result_future = asyncio.create_task(check_repo_popularity(package, releases_info_future, repo_client))
             check_result_future.add_done_callback(lambda f: repo_popularity_task.update(f.result().result_type))
+            check_result_futures.append(check_result_future)
+        for package in packages_to_install:
+            check_result_future = asyncio.create_task(check_package_downloads(package, pypi_stats_client))
+            check_result_future.add_done_callback(lambda f: package_downloads_task.update(f.result().result_type))
             check_result_futures.append(check_result_future)
 
         return await asyncio.gather(*check_result_futures)

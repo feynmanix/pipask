@@ -6,6 +6,10 @@ from pipask.checks.types import CheckResult, CheckResultType
 from pipask.infra.pip import InstallationReportItem
 
 
+_WARNING_THRESHOLD = 1000
+_BOLD_WARNING_THRESHOLD = 100
+
+
 async def check_repo_popularity(
     package: InstallationReportItem, release_info: Awaitable[ReleaseResponse | None], repo_client: RepoClient
 ) -> CheckResult:
@@ -23,11 +27,11 @@ async def check_repo_popularity(
         )
 
     formatted_repository = f"[link={repo_url}]Repository[/link]"
-    if repo_info.star_count > 1000:
+    if repo_info.star_count > _WARNING_THRESHOLD:
         return CheckResult(
             pkg, result_type=CheckResultType.SUCCESS, message=f"{formatted_repository} has {repo_info.star_count} stars"
         )
-    elif repo_info.star_count > 100:
+    elif repo_info.star_count > _BOLD_WARNING_THRESHOLD:
         return CheckResult(
             pkg,
             result_type=CheckResultType.WARNING,

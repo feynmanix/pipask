@@ -1,13 +1,15 @@
 import re
 import urllib.parse
 import logging
-import time
 from dataclasses import dataclass
 
 import httpx
 from pydantic import BaseModel
 
+from pipask.utils import TimeLogger
+
 logger = logging.getLogger(__name__)
+
 
 # Same options as in Google's https://docs.deps.dev/api/v3/#getproject, without discontinued bitbucket
 REPO_URL_REGEX = re.compile(r"^https://(github|gitlab)[.]com/([^/]+/[^/.]+)")
@@ -45,25 +47,23 @@ class RepoClient:
 
     async def _get_github_repo_info(self, repo_name: str) -> RepoInfo | None:
         url = f"https://api.github.com/repos/{repo_name}"
-        start_time = time.time()
-        response = await self.client.get(url)
-        logger.debug(f"GET {url} took {time.time() - start_time:.2f}s")
-        if response.status_code == 404:
-            return None
-        response.raise_for_status()
-        parsed_response = _GitHubRepoResponse.model_validate(response.json())
-        return RepoInfo(star_count=parsed_response.stargazers_count)
+        async with TimeLogger(f"GET {url}", logger):
+            response = await self.client.get(url)
+            if response.status_code == 404:
+                return None
+            response.raise_for_status()
+            parsed_response = _GitHubRepoResponse.model_validate(response.json())
+            return RepoInfo(star_count=parsed_response.stargazers_count)
 
     async def _get_gitlab_repo_info(self, repo_name: str) -> RepoInfo | None:
         url = f"https://gitlab.com/api/v4/projects/{urllib.parse.quote(repo_name, safe='')}"
-        start_time = time.time()
-        response = await self.client.get(url)
-        logger.debug(f"GET {url} took {time.time() - start_time:.2f}s")
-        if response.status_code == 404:
-            return None
-        response.raise_for_status()
-        parsed_response = _GitLabProjectResponse.model_validate(response.json())
-        return RepoInfo(star_count=parsed_response.star_count)
+        async with TimeLogger(f"GET {url}", logger):
+            response = await self.client.get(url)
+            if response.status_code == 404:
+                return None
+            response.raise_for_status()
+            parsed_response = _GitLabProjectResponse.model_validate(response.json())
+            return RepoInfo(star_count=parsed_response.star_count)
 
     async def aclose(self) -> None:
         await self.client.aclose()
