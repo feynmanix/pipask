@@ -1,7 +1,7 @@
 import pytest
 from unittest.mock import AsyncMock, MagicMock
 
-from pipask.checks.package_downloads import check_package_downloads
+from pipask.checks.package_downloads import PackageDownloadsChecker
 from pipask.checks.types import CheckResultType
 from pipask.infra.pypistats import PypiStatsClient, DownloadStats
 from pipask.infra.pip import InstallationReportItem, InstallationReportItemMetadata, InstallationReportItemDownloadInfo
@@ -20,8 +20,10 @@ REPORT_ITEM = InstallationReportItem(
 async def test_package_downloads_no_stats():
     pypi_stats_client = MagicMock(spec=PypiStatsClient)
     pypi_stats_client.get_download_stats = AsyncMock(return_value=None)
+    checker = PackageDownloadsChecker(pypi_stats_client)
+    dummy_release_future = AsyncMock(return_value=None)
 
-    result = await check_package_downloads(REPORT_ITEM, pypi_stats_client)
+    result = await checker.check(REPORT_ITEM, dummy_release_future())
 
     assert result.result_type == CheckResultType.FAILURE
     assert result.message == "No download statistics available"
@@ -33,8 +35,10 @@ async def test_high_download_count():
     pypi_stats_client.get_download_stats = AsyncMock(
         return_value=DownloadStats(last_month=15000, last_week=500, last_day=50)
     )
+    checker = PackageDownloadsChecker(pypi_stats_client)
+    dummy_release_future = AsyncMock(return_value=None)
 
-    result = await check_package_downloads(REPORT_ITEM, pypi_stats_client)
+    result = await checker.check(REPORT_ITEM, dummy_release_future())
 
     assert result.result_type == CheckResultType.SUCCESS
     assert result.message == "15,000 downloads from PyPI in the last month"
@@ -46,8 +50,10 @@ async def test_low_download_count():
     pypi_stats_client.get_download_stats = AsyncMock(
         return_value=DownloadStats(last_month=50, last_week=10, last_day=0)
     )
+    checker = PackageDownloadsChecker(pypi_stats_client)
+    dummy_release_future = AsyncMock(return_value=None)
 
-    result = await check_package_downloads(REPORT_ITEM, pypi_stats_client)
+    result = await checker.check(REPORT_ITEM, dummy_release_future())
 
     assert result.result_type == CheckResultType.FAILURE
     assert result.message == "Only 50 downloads from PyPI in the last month"
