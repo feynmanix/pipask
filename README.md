@@ -1,5 +1,7 @@
 # pipask: pip with informed consent
 
+![pipask-demo](https://github.com/feynmanix/pipask/blob/main/.github/pipask-demo.gif?raw=true)
+
 # Installation
 The recommended way to install `pipask` is with [pipx](https://pipx.pypa.io/stable/#install-pipx) so that `pipask` dependencies are isolated from the rest of your system:
 ```bash

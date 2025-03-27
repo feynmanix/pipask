@@ -5,7 +5,7 @@ on:
 
 jobs:
   tests:
-    name: 'Unit tests & static checks'
+    name: 'Tests & static checks'
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
