@@ -5,6 +5,8 @@ from contextlib import aclosing
 from typing import Awaitable
 
 from rich.prompt import Confirm
+
+from pipask.checks.license import LicenseChecker
 from pipask.checks.repo_popularity import RepoPopularityChecker
 from pipask.checks.package_downloads import PackageDownloadsChecker
 from pipask.checks.types import CheckResult
@@ -96,6 +98,7 @@ async def execute_checks(
             RepoPopularityChecker(repo_client),
             PackageDownloadsChecker(pypi_stats_client),
             ReleaseMetadataChecker(),
+            LicenseChecker(),
         ]
 
         releases_info_futures: list[Awaitable[ReleaseResponse | None]] = [

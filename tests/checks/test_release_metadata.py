@@ -86,7 +86,6 @@ async def test_warning_classifiers(classifier):
     [
         "Development Status :: 5 - Production/Stable",
         "Development Status :: 6 - Mature",
-        None,
     ],
 )
 async def test_success_classifiers(classifier):
@@ -108,3 +107,14 @@ async def test_success_classifiers(classifier):
     assert result.message == (
         "Package is classified as " + classifier if classifier else "No development status classifiers"
     )
+
+
+@pytest.mark.asyncio
+async def test_no_classifiers():
+    checker = ReleaseMetadataChecker()
+    release_info = AsyncMock(return_value=ReleaseResponse(info=ProjectInfo(name=PACKAGE_NAME, version=PACKAGE_VERSION)))
+
+    result = await checker.check(REPORT_ITEM, release_info())
+
+    assert result.result_type == CheckResultType.NEUTRAL
+    assert result.message == "No development status classifiers"

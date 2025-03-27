@@ -36,7 +36,7 @@ class ProjectUrls(BaseModel):
 
 class ProjectInfo(BaseModel):
     home_page: Optional[str] = None
-    classifiers : list[str] = Field(default_factory=list)
+    classifiers: list[str] = Field(default_factory=list)
     license: Optional[str] = None
     name: str
     package_url: Optional[str] = None

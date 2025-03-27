@@ -46,7 +46,7 @@ class ReleaseMetadataChecker(Checker):
             return CheckResult(
                 pkg, result_type=CheckResultType.SUCCESS, message=f"Package is classified as {classifier}"
             )
-        return CheckResult(pkg, result_type=CheckResultType.SUCCESS, message="No development status classifiers")
+        return CheckResult(pkg, result_type=CheckResultType.NEUTRAL, message="No development status classifiers")
 
 
 def _first_matching_classifier(release_info: ReleaseResponse, classifiers: list[str]) -> str | None:

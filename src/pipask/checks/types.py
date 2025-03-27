@@ -7,6 +7,7 @@ class CheckResultType(str, Enum):
     SUCCESS = ("success", "green", "[green]✔[/green]")
     FAILURE = ("failure", "red", "[red]✖[/red]")
     WARNING = ("warning", "yellow", "[yellow bold]![/yellow bold]")
+    NEUTRAL = ("neutral", "default", "✔")
 
     rich_color: str
     rich_icon: str
@@ -24,6 +25,8 @@ class CheckResultType(str, Enum):
             return CheckResultType.FAILURE
         if any(result is CheckResultType.WARNING for result in results):
             return CheckResultType.WARNING
+        if any(result is CheckResultType.NEUTRAL for result in results):
+            return CheckResultType.NEUTRAL
         if any(result is CheckResultType.SUCCESS for result in results):
             return CheckResultType.SUCCESS
         return None

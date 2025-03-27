@@ -36,6 +36,7 @@ alias pip='pipask'
 * Popularity of the source repository as measured by the number of stars on GitHub or GitLab (warning below 1000 stars)
 * Number of downloads from PyPI in the last month (warning below 1000 downloads)
 * Check for development status and yanked status in PyPI metadata 
+* License availability
 
 More checks will be added in the future. Feel free to contribute or open an issue to request a check.
 

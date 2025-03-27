@@ -72,7 +72,11 @@ class _SpinnerAndStatusColumn(ProgressColumn):
 
     def render(self, task: Task) -> RenderableType:
         if task.finished:
-            if task.fields["result"] is True or task.fields["result"] is CheckResultType.SUCCESS:
+            if (
+                task.fields["result"] is True
+                or task.fields["result"] is CheckResultType.SUCCESS
+                or task.fields["result"] is CheckResultType.NEUTRAL
+            ):
                 return CheckResultType.SUCCESS.rich_icon
             elif task.fields["result"] is False or task.fields["result"] is CheckResultType.FAILURE:
                 return CheckResultType.FAILURE.rich_icon
