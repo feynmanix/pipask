@@ -12,6 +12,7 @@ from pipask.cli_helpers import ParsedArgs
 from pipask.infra.pip import InstallationReportItem, pip_pass_through, get_pip_report
 from pipask.infra.pypi import PypiClient, ReleaseResponse
 from pipask.infra.pypistats import PypiStatsClient
+from pipask.checks.release_metadata import ReleaseMetadataChecker
 import sys
 
 import click
@@ -94,6 +95,7 @@ async def execute_checks(
         checkers = [
             RepoPopularityChecker(repo_client),
             PackageDownloadsChecker(pypi_stats_client),
+            ReleaseMetadataChecker(),
         ]
 
         releases_info_futures: list[Awaitable[ReleaseResponse | None]] = [
