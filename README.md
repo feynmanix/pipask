@@ -31,9 +31,10 @@ alias pip='pipask'
 ```
 
 # Checks
-Currently, the only check is for the popularity of the source repository as measured by the number of stars on GitHub or GitLab.
+* Popularity of the source repository as measured by the number of stars on GitHub or GitLab (warning below 1000 stars)
+* Number of downloads from PyPI in the last month (warning below 1000 downloads)
 
-More checks will be added in the future.
+More checks will be added in the future. Feel free to contribute or open an issue to request a check.
 
 # Development
 See [CONTRIBUTING.md](https://github.com/feynmanix/pipask/blob/main/CONTRIBUTING.md) for development guidance.
