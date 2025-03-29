@@ -26,11 +26,17 @@ class PackageAge(Checker):
 
         distributions = await self._pypi_client.get_distributions(package.metadata.name)
         if distributions is None:
-            return CheckResult(pkg, result_type=CheckResultType.FAILURE, message="No distributions information available")
+            return CheckResult(
+                pkg, result_type=CheckResultType.FAILURE, message="No distributions information available"
+            )
         oldest_distribution = min(distributions.files, key=lambda x: x.upload_time)
         max_age_days = (datetime.datetime.now(datetime.timezone.utc) - oldest_distribution.upload_time).days
         if max_age_days < _TOO_NEW_DAYS:
-            return CheckResult(pkg, result_type=CheckResultType.WARNING, message=f"A newly published package: created only {max_age_days} days ago")
+            return CheckResult(
+                pkg,
+                result_type=CheckResultType.WARNING,
+                message=f"A newly published package: created only {max_age_days} days ago",
+            )
 
         resolved_release_info = await release_info_future
         if resolved_release_info is None:
@@ -38,5 +44,13 @@ class PackageAge(Checker):
         newest_release_file = max(resolved_release_info.urls, key=lambda x: x.upload_time)
         release_age_days = (datetime.datetime.now(datetime.timezone.utc) - newest_release_file.upload_time).days
         if release_age_days > _TOO_OLD_DAYS:
-            return CheckResult(pkg, result_type=CheckResultType.WARNING, message=f"The release is older than a year: {release_age_days} days old")
-        return CheckResult(pkg, result_type=CheckResultType.SUCCESS, message=f"The release is {release_age_days} day{'' if release_age_days == 1 else 's'} old")
+            return CheckResult(
+                pkg,
+                result_type=CheckResultType.WARNING,
+                message=f"The release is older than a year: {release_age_days} days old",
+            )
+        return CheckResult(
+            pkg,
+            result_type=CheckResultType.SUCCESS,
+            message=f"The release is {release_age_days} day{'' if release_age_days == 1 else 's'} old",
+        )

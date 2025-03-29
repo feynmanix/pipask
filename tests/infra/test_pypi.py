@@ -49,4 +49,3 @@ async def test_pypi_gets_distributions(pypi_client: PypiClient):
     assert distributions.files[0].upload_time
     oldest_file = min(distributions.files, key=lambda x: x.upload_time)
     assert oldest_file.upload_time == datetime.fromisoformat("2022-05-19T22:16:51.061667+00:00")
-

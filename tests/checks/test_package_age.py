@@ -29,7 +29,7 @@ async def test_no_distributions():
     assert result == CheckResult(
         pinned_requirement="package==1.0.0",
         result_type=CheckResultType.FAILURE,
-        message="No distributions information available"
+        message="No distributions information available",
     )
 
 
@@ -37,12 +37,11 @@ async def test_no_distributions():
 async def test_too_new_package():
     pypi_client = AsyncMock()
     now = datetime.datetime.now(datetime.timezone.utc)
-    recent_upload = now - datetime.timedelta(days=10)
     pypi_client.get_distributions.return_value = DistributionsResponse(
         files=[
             Distribution(
                 filename="package-1.0.0.tar.gz",
-                **{"upload-time": recent_upload},
+                **{"upload-time": now - datetime.timedelta(days=10)},
                 yanked=False,
             )
         ],
@@ -55,7 +54,7 @@ async def test_too_new_package():
     assert result == CheckResult(
         pinned_requirement="package==1.0.0",
         result_type=CheckResultType.WARNING,
-        message="A newly published package: created only 10 days ago"
+        message="A newly published package: created only 10 days ago",
     )
 
 
@@ -74,7 +73,7 @@ async def test_too_old_release():
                 filename="package-2.0.0.tar.gz",
                 **{"upload-time": now - datetime.timedelta(days=100)},
                 yanked=False,
-            )
+            ),
         ],
     )
     checker = PackageAge(pypi_client)
@@ -99,7 +98,7 @@ async def test_too_old_release():
     assert result == CheckResult(
         pinned_requirement="package==1.0.0",
         result_type=CheckResultType.WARNING,
-        message="The release is older than a year: 400 days old"
+        message="The release is older than a year: 400 days old",
     )
 
 
@@ -107,7 +106,6 @@ async def test_too_old_release():
 async def test_successful_check():
     pypi_client = AsyncMock()
     now = datetime.datetime.now(datetime.timezone.utc)
-    recent_upload = now - datetime.timedelta(days=30)
     pypi_client.get_distributions.return_value = DistributionsResponse(
         files=[
             # Include both a recent and an old distribution
@@ -120,7 +118,7 @@ async def test_successful_check():
                 filename="package-2.0.0.tar.gz",
                 **{"upload-time": now - datetime.timedelta(days=1)},
                 yanked=False,
-            )
+            ),
         ],
     )
     checker = PackageAge(pypi_client)
@@ -143,7 +141,5 @@ async def test_successful_check():
     result = await checker.check(REPORT_ITEM, release_info_future())
 
     assert result == CheckResult(
-        pinned_requirement="package==1.0.0",
-        result_type=CheckResultType.SUCCESS,
-        message="The release is 1 day old"
+        pinned_requirement="package==1.0.0", result_type=CheckResultType.SUCCESS, message="The release is 1 day old"
     )
