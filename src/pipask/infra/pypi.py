@@ -58,16 +58,35 @@ class Vulnerability(BaseModel):
     withdrawn: Optional[datetime] = None
 
 
+class ReleaseUrl(BaseModel):
+    filename: str
+    upload_time: datetime = Field(..., alias="upload_time_iso_8601")
+    yanked: bool = False
+
+
 class ProjectResponse(BaseModel):
     info: ProjectInfo
 
 
 class ReleaseResponse(BaseModel):
     info: ProjectInfo
+    urls: list[ReleaseUrl] = Field(default_factory=list)
     vulnerabilities: List[Vulnerability] = Field(default_factory=list)
 
 
-# See https://docs.pypi.org/api/json/#get-a-release for API documentation
+class Distribution(BaseModel):
+    filename: str
+    upload_time: datetime = Field(..., alias="upload-time")
+    yanked: bool | str = False
+
+
+class DistributionsResponse(BaseModel):
+    files: List[Distribution]
+    # meta: dict[str, int | str]
+    # name: str
+    # versions: List[str]
+
+
 class PypiClient:
     def __init__(self):
         self.client = httpx.AsyncClient(follow_redirects=True)
@@ -84,6 +103,7 @@ class PypiClient:
 
     async def get_release_info(self, project_name: str, version: str) -> ReleaseResponse | None:
         """Get metadata for a specific project release from PyPI."""
+        # See https://docs.pypi.org/api/json/#get-a-release for API documentation
         url = f"https://pypi.org/pypi/{project_name}/{version}/json"
         async with TimeLogger(f"GET {url}", logger):
             response = await self.client.get(url)
@@ -91,6 +111,18 @@ class PypiClient:
             return None
         response.raise_for_status()
         return ReleaseResponse.model_validate(response.json())
+
+    async def get_distributions(self, project_name: str) -> DistributionsResponse | None:
+        """Get all distribution download URLs for a project's available releases from PyPI."""
+        # See https://docs.pypi.org/api/index-api/#get-distributions-for-project
+        url = f"https://pypi.org/simple/{project_name}/"
+        headers = {"Accept": "application/vnd.pypi.simple.v1+json"}
+        async with TimeLogger(f"GET {url}", logger):
+            response = await self.client.get(url, headers=headers)
+        if response.status_code == 404:
+            return None
+        response.raise_for_status()
+        return DistributionsResponse.model_validate(response.json())
 
     async def aclose(self) -> None:
         await self.client.aclose()

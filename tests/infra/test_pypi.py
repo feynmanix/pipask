@@ -1,6 +1,6 @@
 from pipask.infra.pypi import PypiClient
 
-
+from datetime import datetime
 import pytest
 
 
@@ -23,7 +23,7 @@ async def test_pypi_gets_non_existent_release_info(pypi_client: PypiClient):
     assert release_info is None
 
 
-# @pytest.mark.integration
+@pytest.mark.integration
 @pytest.mark.parametrize(
     "project_name,expected_url",
     [
@@ -38,3 +38,15 @@ async def test_pypi_gets_source_repo(pypi_client: PypiClient, project_name: str,
     project_info = await pypi_client.get_project_info(project_name)
     assert project_info is not None
     assert project_info.info.project_urls.recognized_repo_url() == expected_url
+
+
+@pytest.mark.integration
+async def test_pypi_gets_distributions(pypi_client: PypiClient):
+    distributions = await pypi_client.get_distributions("pyfluent-iterables")
+
+    assert distributions is not None
+    assert len(distributions.files) > 0
+    assert distributions.files[0].upload_time
+    oldest_file = min(distributions.files, key=lambda x: x.upload_time)
+    assert oldest_file.upload_time == datetime.fromisoformat("2022-05-19T22:16:51.061667+00:00")
+
