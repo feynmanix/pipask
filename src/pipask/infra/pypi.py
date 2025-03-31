@@ -47,7 +47,7 @@ class ProjectInfo(BaseModel):
     yanked_reason: Optional[str] = None
 
 
-class Vulnerability(BaseModel):
+class VulnerabilityPypi(BaseModel):
     aliases: List[str]
     details: Optional[str] = None
     summary: Optional[str] = None
@@ -71,7 +71,7 @@ class ProjectResponse(BaseModel):
 class ReleaseResponse(BaseModel):
     info: ProjectInfo
     urls: list[ReleaseUrl] = Field(default_factory=list)
-    vulnerabilities: List[Vulnerability] = Field(default_factory=list)
+    vulnerabilities: List[VulnerabilityPypi] = Field(default_factory=list)
 
 
 class Distribution(BaseModel):
