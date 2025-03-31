@@ -6,7 +6,7 @@ import httpx
 from pydantic import BaseModel, Field
 import logging
 
-from pipask.utils import TimeLogger
+from pipask.utils import simple_get_request
 
 logger = logging.getLogger(__name__)
 
@@ -94,35 +94,20 @@ class PypiClient:
     async def get_project_info(self, project_name: str) -> ProjectResponse | None:
         """Get project metadata from PyPI."""
         url = f"https://pypi.org/pypi/{project_name}/json"
-        async with TimeLogger(f"GET {url}", logger):
-            response = await self.client.get(url)
-        if response.status_code == 404:
-            return None
-        response.raise_for_status()
-        return ProjectResponse.model_validate(response.json())
+        return await simple_get_request(url, self.client, ProjectResponse)
 
     async def get_release_info(self, project_name: str, version: str) -> ReleaseResponse | None:
         """Get metadata for a specific project release from PyPI."""
         # See https://docs.pypi.org/api/json/#get-a-release for API documentation
         url = f"https://pypi.org/pypi/{project_name}/{version}/json"
-        async with TimeLogger(f"GET {url}", logger):
-            response = await self.client.get(url)
-        if response.status_code == 404:
-            return None
-        response.raise_for_status()
-        return ReleaseResponse.model_validate(response.json())
+        return await simple_get_request(url, self.client, ReleaseResponse)
 
     async def get_distributions(self, project_name: str) -> DistributionsResponse | None:
         """Get all distribution download URLs for a project's available releases from PyPI."""
         # See https://docs.pypi.org/api/index-api/#get-distributions-for-project
         url = f"https://pypi.org/simple/{project_name}/"
         headers = {"Accept": "application/vnd.pypi.simple.v1+json"}
-        async with TimeLogger(f"GET {url}", logger):
-            response = await self.client.get(url, headers=headers)
-        if response.status_code == 404:
-            return None
-        response.raise_for_status()
-        return DistributionsResponse.model_validate(response.json())
+        return await simple_get_request(url, self.client, DistributionsResponse, headers=headers)
 
     async def aclose(self) -> None:
         await self.client.aclose()

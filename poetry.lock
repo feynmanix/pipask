@@ -119,6 +119,18 @@ files = [
 markers = {main = "platform_system == \"Windows\""}
 
 [[package]]
+name = "cvss"
+version = "3.4"
+description = "CVSS2/3/4 library with interactive calculator for Python 2 and Python 3"
+optional = false
+python-versions = "*"
+groups = ["main"]
+files = [
+    {file = "cvss-3.4-py2.py3-none-any.whl", hash = "sha256:d9950613758e60820f7fac37ca5f35158712f8f2ea4f6629858a60c4984fe4ef"},
+    {file = "cvss-3.4.tar.gz", hash = "sha256:632353244ba3c58b53355466677edc968b9d7143c317b66271f9fd7939951ee8"},
+]
+
+[[package]]
 name = "exceptiongroup"
 version = "1.2.2"
 description = "Backport of PEP 654 (exception groups)"
@@ -765,4 +777,4 @@ files = [
 [metadata]
 lock-version = "2.1"
 python-versions = ">=3.10"
-content-hash = "80ddfeea21d9cddd76385c0876b352c8a9c401392bbfb2828268aad1fc862eda"
+content-hash = "4ffef9c8cc628f183acdf485ef3996836d2f91715a94c69b0f47bc913ad1ef5f"

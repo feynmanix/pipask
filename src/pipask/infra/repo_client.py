@@ -6,7 +6,7 @@ from dataclasses import dataclass
 import httpx
 from pydantic import BaseModel
 
-from pipask.utils import TimeLogger
+from pipask.utils import simple_get_request
 
 logger = logging.getLogger(__name__)
 
@@ -47,23 +47,13 @@ class RepoClient:
 
     async def _get_github_repo_info(self, repo_name: str) -> RepoInfo | None:
         url = f"https://api.github.com/repos/{repo_name}"
-        async with TimeLogger(f"GET {url}", logger):
-            response = await self.client.get(url)
-            if response.status_code == 404:
-                return None
-            response.raise_for_status()
-            parsed_response = _GitHubRepoResponse.model_validate(response.json())
-            return RepoInfo(star_count=parsed_response.stargazers_count)
+        parsed_response = await simple_get_request(url, self.client, _GitHubRepoResponse)
+        return RepoInfo(star_count=parsed_response.stargazers_count) if parsed_response is not None else None
 
     async def _get_gitlab_repo_info(self, repo_name: str) -> RepoInfo | None:
         url = f"https://gitlab.com/api/v4/projects/{urllib.parse.quote(repo_name, safe='')}"
-        async with TimeLogger(f"GET {url}", logger):
-            response = await self.client.get(url)
-            if response.status_code == 404:
-                return None
-            response.raise_for_status()
-            parsed_response = _GitLabProjectResponse.model_validate(response.json())
-            return RepoInfo(star_count=parsed_response.star_count)
+        parsed_response = await simple_get_request(url, self.client, _GitLabProjectResponse)
+        return RepoInfo(star_count=parsed_response.star_count) if parsed_response is not None else None
 
     async def aclose(self) -> None:
         await self.client.aclose()
