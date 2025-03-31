@@ -36,6 +36,7 @@ alias pip='pipask'
 * Popularity of the source repository as measured by the number of stars on GitHub or GitLab (warning below 1000 stars)
 * Number of downloads from PyPI in the last month (warning below 1000 downloads)
 * Package and release age (warning for packages with no release older than 22 days, or for releases older than 365 days)
+* Known vulnerabilities in the package available in PyPI (failure for HIGH or CRITICAL vulnerabilities, warning for MODERATE vulnerabilities)
 * Check for development status and yanked status in PyPI metadata 
 * License availability
 

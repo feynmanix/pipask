@@ -51,7 +51,7 @@ class VulnerabilityPypi(BaseModel):
     aliases: List[str]
     details: Optional[str] = None
     summary: Optional[str] = None
-    fixed_in: List[str]
+    fixed_in: Optional[List[str]] = None
     id: Optional[str] = None
     link: Optional[str] = None
     source: Optional[str] = None

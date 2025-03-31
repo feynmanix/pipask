@@ -63,9 +63,9 @@ async def test_no_vulnerabilities(checker, sample_package):
             "[red][link=https://example.com/cve-2023-1234]CVE-2023-1234[/link] (HIGH)[/red]",
         ),
         (
-            VulnerabilitySeverity.MODERATE,
+            VulnerabilitySeverity.MEDIUM,
             CheckResultType.WARNING,
-            "[yellow][link=https://example.com/cve-2023-1234]CVE-2023-1234[/link] (Moderate)[/yellow]",
+            "[yellow][link=https://example.com/cve-2023-1234]CVE-2023-1234[/link] (Medium)[/yellow]",
         ),
         (
             VulnerabilitySeverity.LOW,
@@ -139,7 +139,7 @@ async def test_multiple_vulnerabilities(checker, sample_package, vulnerability_d
     release_info = ReleaseResponse(info=ProjectInfo(**sample_package.metadata.model_dump()), vulnerabilities=vulns)
     details_map = {
         "CVE-1C": VulnerabilityDetails(id="CVE-1C", severity=VulnerabilitySeverity.CRITICAL),
-        "CVE-2M": VulnerabilityDetails(id="CVE-2M", severity=VulnerabilitySeverity.MODERATE),
+        "CVE-2M": VulnerabilityDetails(id="CVE-2M", severity=VulnerabilitySeverity.MEDIUM),
         "CVE-3L": VulnerabilityDetails(id="CVE-3L", severity=VulnerabilitySeverity.LOW),
     }
 
@@ -150,7 +150,7 @@ async def test_multiple_vulnerabilities(checker, sample_package, vulnerability_d
     assert result == CheckResult(
         pinned_requirement=sample_package.pinned_requirement,
         result_type=CheckResultType.FAILURE,
-        message="Found the following vulnerabilities: [red]CVE-1C (CRITICAL)[/red], [yellow]CVE-2M (Moderate)[/yellow], [default]CVE-3L (Low)[/default]",
+        message="Found the following vulnerabilities: [red]CVE-1C (CRITICAL)[/red], [yellow]CVE-2M (Medium)[/yellow], [default]CVE-3L (Low)[/default]",
     )
 
 

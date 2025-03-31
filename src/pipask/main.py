@@ -17,7 +17,7 @@ from pipask.infra.pypistats import PypiStatsClient
 from pipask.checks.package_age import PackageAge
 from pipask.checks.release_metadata import ReleaseMetadataChecker
 from pipask.checks.vulnerabilities import ReleaseVulnerabilityChecker
-from pipask.infra.vulnerability_details import DummyVulnerabilityDetailsService
+from pipask.infra.vulnerability_details import OsvVulnerabilityDetailsService
 import sys
 
 import click
@@ -96,12 +96,13 @@ async def execute_checks(
         aclosing(PypiClient()) as pypi_client,
         aclosing(RepoClient()) as repo_client,
         aclosing(PypiStatsClient()) as pypi_stats_client,
+        aclosing(OsvVulnerabilityDetailsService()) as vulnerability_details_service,
     ):
         checkers = [
             RepoPopularityChecker(repo_client),
             PackageDownloadsChecker(pypi_stats_client),
             PackageAge(pypi_client),
-            ReleaseVulnerabilityChecker(DummyVulnerabilityDetailsService()),
+            ReleaseVulnerabilityChecker(vulnerability_details_service),
             ReleaseMetadataChecker(),
             LicenseChecker(),
         ]
