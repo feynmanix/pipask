@@ -3,4 +3,4 @@ See https://github.com/feynmanix/pipask/blob/main/README.md for more information
 """
 
 # Version of the package
-__version__ = "0.6.2"
+__version__ = "0.7.0"
