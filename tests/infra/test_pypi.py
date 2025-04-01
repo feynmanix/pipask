@@ -32,6 +32,7 @@ async def test_pypi_gets_non_existent_release_info(pypi_client: PypiClient):
         ("torch", None),
         ("huggingface-hub", "https://github.com/huggingface/huggingface_hub"),
         ("ase", "https://gitlab.com/ase/ase"),
+        ("pip-tools", "https://github.com/jazzband/pip-tools"),
     ],
 )
 async def test_pypi_gets_source_repo(pypi_client: PypiClient, project_name: str, expected_url: str | None):

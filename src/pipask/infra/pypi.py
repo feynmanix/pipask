@@ -19,13 +19,43 @@ def _get_maybe_repo_url(url: str) -> str | None:
 
 
 class ProjectUrls(BaseModel):
-    bug_reports: Optional[str] = Field(None, alias="Bug Reports")
-    funding: Optional[str] = Field(None, alias="Funding")
-    homepage: Optional[str] = Field(None, alias="Homepage")
-    source: Optional[str] = Field(None, alias="Source")
-    documentation: Optional[str] = Field(None, alias="Documentation")
-    repository: Optional[str] = Field(None, alias="Repository")
-    issues: Optional[str] = Field(None, alias="Issues")
+    bug_reports_lowercase: Optional[str] = Field(None, alias="bug reports")
+    homepage_lowercase: Optional[str] = Field(None, alias="homepage")
+    source_lowercase: Optional[str] = Field(None, alias="source")
+    documentation_lowercase: Optional[str] = Field(None, alias="documentation")
+    repository_lowercase: Optional[str] = Field(None, alias="repository")
+    issues_lowercase: Optional[str] = Field(None, alias="issues")
+
+    bug_reports_capitalized: Optional[str] = Field(None, alias="Bug Reports")
+    homepage_capitalized: Optional[str] = Field(None, alias="Homepage")
+    source_capitalized: Optional[str] = Field(None, alias="Source")
+    documentation_capitalized: Optional[str] = Field(None, alias="Documentation")
+    repository_capitalized: Optional[str] = Field(None, alias="Repository")
+    issues_capitalized: Optional[str] = Field(None, alias="Issues")
+
+    @property
+    def bug_reports(self) -> str | None:
+        return self.bug_reports_capitalized or self.bug_reports_lowercase
+
+    @property
+    def homepage(self) -> str | None:
+        return self.homepage_capitalized or self.homepage_lowercase
+
+    @property
+    def source(self) -> str | None:
+        return self.source_capitalized or self.source_lowercase
+
+    @property
+    def documentation(self) -> str | None:
+        return self.documentation_capitalized or self.documentation_lowercase
+
+    @property
+    def repository(self) -> str | None:
+        return self.repository_capitalized or self.repository_lowercase
+
+    @property
+    def issues(self) -> str | None:
+        return self.issues_capitalized or self.issues_lowercase
 
     def recognized_repo_url(self) -> str | None:
         for url in [self.repository, self.source, self.homepage, self.documentation, self.issues]:
