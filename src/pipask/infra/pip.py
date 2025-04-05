@@ -8,7 +8,7 @@ import time
 from pydantic import BaseModel, Field
 
 from pipask.cli_helpers import ParsedArgs
-from pipask.exception import PipaskException
+from pipask.exception import PipAskResolutionException, PipaskException
 
 logger = logging.getLogger(__name__)
 
@@ -35,7 +35,20 @@ def pip_pass_through(args: list[str]) -> None:
         sys.exit(e.returncode)
 
 
-def get_pip_install_report(parsed_args: ParsedArgs) -> "PipInstallReport":
+def get_pip_install_report_from_pypi(parsed_args: ParsedArgs) -> "PipInstallReport":
+    """
+    Get install report by getting all the metadata possible from PyPI or from safe sources such as built wheels.
+
+    :raises PipAskResolutionException: if resolution of versions to install is not possible from safe sources
+    """
+    raise PipAskResolutionException("TODO")  # TODO
+
+
+def get_pip_install_report_unsafe(parsed_args: ParsedArgs) -> "PipInstallReport":
+    """
+    Get pip install report by directly invoking pip.
+    This is unsafe because it may execute 3rd party code (setup.py or PEP 517 hooks) for source distributions.
+    """
     if "install" not in parsed_args.other_args:
         raise PipaskException("unexpected command")
     pip_args = (

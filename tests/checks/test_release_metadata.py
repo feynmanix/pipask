@@ -13,7 +13,7 @@ REPORT_ITEM = InstallationReportItem(
     download_info=InstallationReportItemDownloadInfo(url="https://example.com"),
     requested=True,
     is_yanked=False,
-is_direct=True,
+    is_direct=True,
 )
 
 
