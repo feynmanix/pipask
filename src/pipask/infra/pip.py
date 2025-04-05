@@ -1,9 +1,10 @@
+import json
+import logging
 import os
 import subprocess
 import sys
-import json
 import time
-import logging
+
 from pydantic import BaseModel, Field
 
 from pipask.cli_helpers import ParsedArgs
@@ -34,20 +35,20 @@ def pip_pass_through(args: list[str]) -> None:
         sys.exit(e.returncode)
 
 
-def get_pip_report(parsed_args: ParsedArgs) -> "PipReport":
+def get_pip_install_report(parsed_args: ParsedArgs) -> "PipInstallReport":
     if "install" not in parsed_args.other_args:
         raise PipaskException("unexpected command")
     pip_args = (
-        _get_pip_command()
-        + parsed_args.other_args
-        + ["--dry-run", "--quiet", "--no-deps", "--report", "-"]  # No-deps to speed up the resolution
+        _get_pip_command() + parsed_args.other_args + ["--dry-run", "--quiet", "--report", "-"]
+        # Would be nice to use --no-deps to speed up the resolution, but that may give versions
+        # different from will actually be installed
     )
     logger.debug(f"Running pip report subprocess: {' '.join(pip_args)}")
     start_time = time.time()
     try:
         result = subprocess.run(pip_args, check=True, text=True, capture_output=True)
         logger.debug(f"Pip report subprocess completed in {time.time() - start_time:.2f}s")
-        report = PipReport.model_validate(json.loads(result.stdout))
+        report = PipInstallReport.model_validate(json.loads(result.stdout))
     except subprocess.CalledProcessError as e:
         logger.debug(
             f"Pip report subprocess failed after {time.time() - start_time:.2f}s with exit code {e.returncode}"
@@ -60,23 +61,32 @@ def get_pip_report(parsed_args: ParsedArgs) -> "PipReport":
 class InstallationReportItemMetadata(BaseModel):
     name: str
     version: str
+    license: str | None = None
+    classifier: list[str] = Field(default_factory=list)
+
+
+class InstallationReportArchiveInfo(BaseModel):
+    hash: str | None = None
+    hashes: dict[str, str] | None = None
 
 
 class InstallationReportItemDownloadInfo(BaseModel):
     url: str
+    archive_info: InstallationReportArchiveInfo | None = None
 
 
 class InstallationReportItem(BaseModel):
     metadata: InstallationReportItemMetadata
     download_info: InstallationReportItemDownloadInfo
     requested: bool
-    is_yanked: bool = Field(False)
+    is_yanked: bool
+    is_direct: bool
 
     @property
     def pinned_requirement(self) -> str:
         return f"{self.metadata.name}=={self.metadata.version}"
 
 
-class PipReport(BaseModel):
+class PipInstallReport(BaseModel):
     version: str
     install: list[InstallationReportItem]
