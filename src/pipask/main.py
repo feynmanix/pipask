@@ -11,7 +11,7 @@ from pipask.checks.repo_popularity import RepoPopularityChecker
 from pipask.checks.package_downloads import PackageDownloadsChecker
 from pipask.checks.types import CheckResult
 from pipask.cli_helpers import ParsedArgs
-from pipask.infra.pip import InstallationReportItem, pip_pass_through, get_pip_report
+from pipask.infra.pip import InstallationReportItem, pip_pass_through, get_pip_install_report
 from pipask.infra.pypi import PypiClient, ReleaseResponse
 from pipask.infra.pypistats import PypiStatsClient
 from pipask.checks.package_age import PackageAge
@@ -63,7 +63,7 @@ def main(args: ParsedArgs):
     with SimpleTaskProgress(console=console) as progress:
         pip_report_task = progress.add_task("Resolving dependencies to install with pip")
         try:
-            pip_report = get_pip_report(args)
+            pip_report = get_pip_install_report(args)
             pip_report_task.update(True)
         except Exception as e:
             pip_report_task.update(False)
@@ -81,6 +81,7 @@ def main(args: ParsedArgs):
         raise Exception("No checks were performed. Aborting.")
 
     # Intentionally printing report after the progress monitor is closed
+    # to make sure the progress bars are displayed as completed
     print_report(check_results, console)
     if Confirm.ask("\n[green]?[/green] Would you like to continue installing package(s)?"):
         pip_pass_through(args.raw_args)

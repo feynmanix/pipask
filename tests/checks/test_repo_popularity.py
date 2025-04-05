@@ -14,6 +14,7 @@ REPORT_ITEM = InstallationReportItem(
     download_info=InstallationReportItemDownloadInfo(url="https://example.com"),
     requested=True,
     is_yanked=False,
+    is_direct=True,
 )
 RELEASE_RESPONSE_WITH_REPO_URL = ReleaseResponse(
     info=ProjectInfo(

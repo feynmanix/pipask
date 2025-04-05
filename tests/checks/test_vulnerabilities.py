@@ -33,6 +33,7 @@ def sample_package():
         download_info=InstallationReportItemDownloadInfo(url="https://example.com/requests-2.31.0.tar.gz"),
         requested=True,
         is_yanked=False,
+        is_direct=True,
     )
 
 

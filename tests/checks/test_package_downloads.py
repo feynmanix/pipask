@@ -1,10 +1,11 @@
-import pytest
 from unittest.mock import AsyncMock, MagicMock
+
+import pytest
 
 from pipask.checks.package_downloads import PackageDownloadsChecker
 from pipask.checks.types import CheckResultType
-from pipask.infra.pypistats import PypiStatsClient, DownloadStats
-from pipask.infra.pip import InstallationReportItem, InstallationReportItemMetadata, InstallationReportItemDownloadInfo
+from pipask.infra.pip import InstallationReportItem, InstallationReportItemDownloadInfo, InstallationReportItemMetadata
+from pipask.infra.pypistats import DownloadStats, PypiStatsClient
 
 PACKAGE_NAME = "package"
 PACKAGE_VERSION = "1.0.0"
@@ -13,6 +14,7 @@ REPORT_ITEM = InstallationReportItem(
     download_info=InstallationReportItemDownloadInfo(url="https://example.com"),
     requested=True,
     is_yanked=False,
+    is_direct=True,
 )
 
 
