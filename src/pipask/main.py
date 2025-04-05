@@ -54,7 +54,7 @@ def cli(ctx: click.Context, help: bool, dry_run: bool, report: str, no_deps: boo
 def main(args: ParsedArgs):
     is_install_command = len(args.other_args) > 0 and args.other_args[0] == "install"
 
-    if not is_install_command or args.help or args.dry_run:
+    if not is_install_command or args.help:
         # Only run when actually installing something
         pip_pass_through(args.raw_args)
         return
