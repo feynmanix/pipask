@@ -4,6 +4,7 @@ from pipask.checks.types import CheckResult, CheckResultType
 
 
 def print_report(check_results: list[CheckResult], console: Console) -> None:
+    # TODO: handle non-pypi packages explicitly - show warning they couldn't be checked
     console.print("\nPackage check results:")
     packages = set(result.pinned_requirement for result in check_results)
     for package in packages:

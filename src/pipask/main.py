@@ -1,32 +1,35 @@
 import asyncio
 import logging
 import os
+import sys
 from contextlib import aclosing
 from typing import Awaitable
 
+import click
+from rich.console import Console
+from rich.logging import RichHandler
 from rich.prompt import Confirm
 
 from pipask.checks.license import LicenseChecker
-from pipask.checks.repo_popularity import RepoPopularityChecker
+from pipask.checks.package_age import PackageAge
 from pipask.checks.package_downloads import PackageDownloadsChecker
+from pipask.checks.release_metadata import ReleaseMetadataChecker
+from pipask.checks.repo_popularity import RepoPopularityChecker
 from pipask.checks.types import CheckResult
-from pipask.cli_helpers import ParsedArgs
-from pipask.infra.pip import InstallationReportItem, pip_pass_through, get_pip_install_report
+from pipask.checks.vulnerabilities import ReleaseVulnerabilityChecker
+from pipask.cli_helpers import ParsedArgs, SimpleTaskProgress
+from pipask.exception import PipAskResolutionException
+from pipask.infra.pip import (
+    InstallationReportItem,
+    PipInstallReport,
+    get_pip_install_report_from_pypi,
+    get_pip_install_report_unsafe,
+    pip_pass_through,
+)
 from pipask.infra.pypi import PypiClient, ReleaseResponse
 from pipask.infra.pypistats import PypiStatsClient
-from pipask.checks.package_age import PackageAge
-from pipask.checks.release_metadata import ReleaseMetadataChecker
-from pipask.checks.vulnerabilities import ReleaseVulnerabilityChecker
-from pipask.infra.vulnerability_details import OsvVulnerabilityDetailsService
-import sys
-
-import click
-from rich.console import Console
-
 from pipask.infra.repo_client import RepoClient
-from pipask.cli_helpers import SimpleTaskProgress
-from rich.logging import RichHandler
-
+from pipask.infra.vulnerability_details import OsvVulnerabilityDetailsService
 from pipask.report import print_report
 
 console = Console()
@@ -61,9 +64,9 @@ def main(args: ParsedArgs):
 
     check_results = None
     with SimpleTaskProgress(console=console) as progress:
-        pip_report_task = progress.add_task("Resolving dependencies to install with pip")
+        pip_report_task = progress.add_task("Resolving dependencies to install")
         try:
-            pip_report = get_pip_install_report(args)
+            pip_report = get_pip_install_report_with_consent(args)
             pip_report_task.update(True)
         except Exception as e:
             pip_report_task.update(False)
@@ -88,6 +91,19 @@ def main(args: ParsedArgs):
     else:
         console.print("[yellow]Aborted!")
         sys.exit(2)
+
+
+def get_pip_install_report_with_consent(args: ParsedArgs) -> PipInstallReport:
+    try:
+        return get_pip_install_report_from_pypi(args)
+    except PipAskResolutionException as e:
+        message_formatted = f" ({e.message})" if e.message else ""
+        console.print(
+            f"[yellow]Unable to resolve dependencies without preparing a source distribution{message_formatted}\n"
+            + "Trying to resolve dependencies with pip - note that this may execute 3rd party code before pipask can run checks[/yellow]"
+        )
+        # TODO: ask for consent if configured to do so
+        return get_pip_install_report_unsafe(args)
 
 
 async def execute_checks(
