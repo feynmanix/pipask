@@ -2,6 +2,10 @@ class PipaskException(Exception):
     pass
 
 
+class HandoverToPipException(PipaskException):
+    pass
+
+
 class PipAskResolutionException(PipaskException):
     """Exception raised when pipask cannot resolve the dependencies with a given method"""
 

@@ -5,7 +5,6 @@ import sys
 from contextlib import aclosing
 from typing import Awaitable
 
-import click
 from rich.console import Console
 from rich.logging import RichHandler
 from rich.prompt import Confirm
@@ -17,13 +16,16 @@ from pipask.checks.release_metadata import ReleaseMetadataChecker
 from pipask.checks.repo_popularity import RepoPopularityChecker
 from pipask.checks.types import CheckResult
 from pipask.checks.vulnerabilities import ReleaseVulnerabilityChecker
-from pipask.cli_helpers import ParsedArgs, SimpleTaskProgress
-from pipask.exception import PipAskResolutionException
+from pipask.cli_args import InstallArgs
+from pipask.cli_helpers import SimpleTaskProgress
+from pipask.exception import PipAskResolutionException, HandoverToPipException
 from pipask.infra.pip import (
     InstallationReportItem,
     PipInstallReport,
     get_pip_install_report_from_pypi,
     get_pip_install_report_unsafe,
+    parse_pip_arguments,
+    parse_pip_install_arguments,
     pip_pass_through,
 )
 from pipask.infra.pypi import PypiClient, ReleaseResponse
@@ -41,32 +43,32 @@ logging.basicConfig(level=logging.WARNING, format=log_format, handlers=[RichHand
 logging.getLogger("pipask").setLevel(getattr(logging, pipask_log_level, logging.INFO))
 
 
-# (see relevant pip commands at https://pip.pypa.io/en/stable/cli/pip_install/)
-@click.command(context_settings=dict(ignore_unknown_options=True, allow_extra_args=True))
-@click.option("-h", "--help", is_flag=True)
-@click.option("--dry-run", is_flag=True)
-@click.option("--no-deps", is_flag=True)
-@click.option("--report", type=str)
-@click.pass_context
-def cli(ctx: click.Context, help: bool, dry_run: bool, report: str, no_deps: bool) -> None:
-    """pipask - safer python package installation with audit and consent."""
-    parsed_args = ParsedArgs.from_click_context(ctx)
-    main(parsed_args)
+def main(args: list[str] | None = None) -> None:
+    if args is None:
+        args = sys.argv[1:]
 
+    # Parse arguments
+    # And short-circuit to pip if this is not an installation command
+    try:
+        parsed_args = parse_pip_arguments(args)
+    except HandoverToPipException:
+        pip_pass_through(args)
+        return
 
-def main(args: ParsedArgs):
-    is_install_command = len(args.other_args) > 0 and args.other_args[0] == "install"
+    if parsed_args.command_name != "install":
+        pip_pass_through(args)
+        return
 
-    if not is_install_command or args.help:
-        # Only run when actually installing something
-        pip_pass_through(args.raw_args)
+    install_args = parse_pip_install_arguments(parsed_args)
+    if install_args.help or install_args.version:
+        pip_pass_through(args)
         return
 
     check_results = None
     with SimpleTaskProgress(console=console) as progress:
         pip_report_task = progress.add_task("Resolving dependencies to install")
         try:
-            pip_report = get_pip_install_report_with_consent(args)
+            pip_report = get_pip_install_report_with_consent(install_args)
             pip_report_task.update(True)
         except Exception as e:
             pip_report_task.update(False)
@@ -78,7 +80,7 @@ def main(args: ParsedArgs):
 
     if len(requested_packages) == 0:
         console.print("  No new packages to install\n")
-        pip_pass_through(args.raw_args)
+        pip_pass_through(parsed_args.raw_args)
         return
     elif check_results is None:
         raise Exception("No checks were performed. Aborting.")
@@ -87,13 +89,13 @@ def main(args: ParsedArgs):
     # to make sure the progress bars are displayed as completed
     print_report(check_results, console)
     if Confirm.ask("\n[green]?[/green] Would you like to continue installing package(s)?"):
-        pip_pass_through(args.raw_args)
+        pip_pass_through(parsed_args.raw_args)
     else:
         console.print("[yellow]Aborted!")
         sys.exit(2)
 
 
-def get_pip_install_report_with_consent(args: ParsedArgs) -> PipInstallReport:
+def get_pip_install_report_with_consent(args: InstallArgs) -> PipInstallReport:
     try:
         return get_pip_install_report_from_pypi(args)
     except PipAskResolutionException as e:
@@ -139,4 +141,4 @@ async def execute_checks(
 
 
 if __name__ == "__main__":
-    cli()
+    main()

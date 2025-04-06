@@ -7,8 +7,11 @@ import time
 
 from pydantic import BaseModel, Field
 
-from pipask.cli_helpers import ParsedArgs
-from pipask.exception import PipAskResolutionException, PipaskException
+from pipask._vendor.pip._internal.cli.main_parser import create_main_parser  # pyright: ignore
+from pipask._vendor.pip._internal.commands import commands_dict  # pyright: ignore
+from pipask._vendor.pip._internal.commands.install import InstallCommand  # pyright: ignore
+from pipask.cli_args import InstallArgs, PipCommandArgs
+from pipask.exception import HandoverToPipException, PipaskException, PipAskResolutionException
 
 logger = logging.getLogger(__name__)
 
@@ -35,7 +38,44 @@ def pip_pass_through(args: list[str]) -> None:
         sys.exit(e.returncode)
 
 
-def get_pip_install_report_from_pypi(parsed_args: ParsedArgs) -> "PipInstallReport":
+def parse_pip_arguments(args: list[str]) -> PipCommandArgs:
+    """
+    :raises HandoverToPipException if processing should not continue - hand over to pip to show the message
+    """
+    # Modified version of pip.cli.main_parser.parse_command
+    parser = create_main_parser()
+    general_options, args_else = parser.parse_args(args)
+    # --version
+    if general_options.version:
+        raise HandoverToPipException("--version")
+
+    # pip || pip help -> print_help()
+    if not args_else or (args_else[0] == "help" and len(args_else) == 1):
+        raise HandoverToPipException("help")
+
+    # the subcommand name
+    cmd_name = args_else[0]
+
+    if cmd_name not in commands_dict:
+        raise HandoverToPipException("unknown command")
+
+    # all the args without the subcommand
+    cmd_args = args[:]
+    cmd_args.remove(cmd_name)
+
+    return PipCommandArgs(command_name=cmd_name, command_args=cmd_args, raw_args=args)
+
+
+def parse_pip_install_arguments(args: PipCommandArgs) -> InstallArgs:
+    if args.command_name != "install":
+        raise PipaskException("unexpected command " + args.command_name)
+
+    install_command = InstallCommand(name="install", summary="", isolated=("--isolated" in args.command_args))
+    install_options, install_args = install_command.parse_args(args.command_args)
+    return InstallArgs(raw_args=args.raw_args, raw_options=install_options, install_args=install_args)
+
+
+def get_pip_install_report_from_pypi(args: InstallArgs) -> "PipInstallReport":
     """
     Get install report by getting all the metadata possible from PyPI or from safe sources such as built wheels.
 
@@ -44,15 +84,13 @@ def get_pip_install_report_from_pypi(parsed_args: ParsedArgs) -> "PipInstallRepo
     raise PipAskResolutionException("TODO")  # TODO
 
 
-def get_pip_install_report_unsafe(parsed_args: ParsedArgs) -> "PipInstallReport":
+def get_pip_install_report_unsafe(parsed_args: InstallArgs) -> "PipInstallReport":
     """
     Get pip install report by directly invoking pip.
     This is unsafe because it may execute 3rd party code (setup.py or PEP 517 hooks) for source distributions.
     """
-    if "install" not in parsed_args.other_args:
-        raise PipaskException("unexpected command")
     pip_args = (
-        _get_pip_command() + parsed_args.other_args + ["--dry-run", "--quiet", "--report", "-"]
+        _get_pip_command() + parsed_args.raw_args + ["--dry-run", "--quiet", "--report", "-"]
         # Would be nice to use --no-deps to speed up the resolution, but that may give versions
         # different from will actually be installed
     )

@@ -123,7 +123,9 @@ help_: Callable[..., Option] = partial(
     "-h",
     "--help",
     dest="help",
-    action="help",
+    # MODIFIED for pipask
+    action="store_true",
+    default=False,
     help="Show help.",
 )
 
