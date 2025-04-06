@@ -136,7 +136,7 @@ def user_agent() -> str:
         data["implementation"]["version"] = platform.python_version()
 
     if sys.platform.startswith("linux"):
-        from pip._vendor import distro
+        import distro
 
         linux_distribution = distro.name(), distro.version(), distro.codename()
         distro_infos: Dict[str, Any] = dict(

@@ -495,7 +495,7 @@ class Link(KeyBasedCompareMixin):
 
     @property
     def is_vcs(self) -> bool:
-        from pip._internal.vcs import vcs
+        from pipask._vendor.pip._internal.vcs import vcs
 
         return self.scheme in vcs.all_schemes
 

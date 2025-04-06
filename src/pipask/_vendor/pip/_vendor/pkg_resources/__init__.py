@@ -76,7 +76,7 @@ try:
 except ImportError:
     importlib_machinery = None
 
-from pip._internal.utils._jaraco_text import (
+from pipask._vendor.pip._internal.utils._jaraco_text import (
     yield_lines,
     drop_comment,
     join_continuation,

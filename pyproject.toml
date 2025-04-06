@@ -22,7 +22,9 @@ dependencies = [
     "tenacity (>=9.1.2,<10.0.0)", # same major version as the corresponding fork of pip uses
     "cachecontrol (>=0.14.2,<0.15.0)", # same major version as the corresponding fork of pip uses
     "resolvelib (>=1.1.0,<2.0.0)", # same major version as the corresponding fork of pip uses
-    "tomli (>=2.2.1,<3.0.0)" # same major version as the corresponding fork of pip uses
+    "tomli (>=2.2.1,<3.0.0)", # same major version as the corresponding fork of pip uses
+    "truststore (>=0.10.1,<0.11.0)", # same major version as the corresponding fork of pip uses
+    "distro (>=1.9.0,<2.0.0)" # same major version as the corresponding fork of pip uses
 ]
 classifiers = [
     "License :: OSI Approved :: MIT License",

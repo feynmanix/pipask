@@ -4,7 +4,7 @@ from typing import List, Optional
 
 # from pipask._vendor.pip._internal.cli.spinners import open_spinner
 # from pipask._vendor.pip._internal.utils.setuptools_build import make_setuptools_bdist_wheel_args
-# from pipask._vendor.pip._internal.utils.subprocess import call_subprocess, format_command_args
+from pipask._vendor.pip._internal.utils.subprocess import call_subprocess, format_command_args
 from pipask.exception import PipaskException
 
 logger = logging.getLogger(__name__)

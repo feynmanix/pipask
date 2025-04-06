@@ -59,7 +59,7 @@ def _create_truststore_ssl_context() -> Optional["SSLContext"]:
         return None
 
     try:
-        from pip._vendor import truststore
+        import truststore
     except ImportError as e:
         raise CommandError(f"The truststore feature is unavailable: {e}")
 

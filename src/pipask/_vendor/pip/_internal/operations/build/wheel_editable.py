@@ -4,6 +4,8 @@ from typing import Optional
 
 from pyproject_hooks import BuildBackendHookCaller, HookMissing
 
+from pipask.exception import PipaskException
+
 # from pipask._vendor.pip._internal.utils.subprocess import runner_with_spinner_message
 
 logger = logging.getLogger(__name__)

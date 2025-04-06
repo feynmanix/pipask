@@ -532,7 +532,7 @@ class HashMissing(HashError):
 
     def body(self) -> str:
         # Dodge circular import.
-        from pip._internal.utils.hashes import FAVORITE_HASH
+        from pipask._vendor.pip._internal.utils.hashes import FAVORITE_HASH
 
         package = None
         if self.req:
@@ -721,7 +721,7 @@ class ExternallyManagedEnvironment(DiagnosticPipError):
         except KeyError:
             pass
         except (OSError, UnicodeDecodeError, configparser.ParsingError):
-            from pip._internal.utils._log import VERBOSE
+            from pipask._vendor.pip._internal.utils._log import VERBOSE
 
             exc_info = logger.isEnabledFor(VERBOSE)
             logger.warning("Failed to read %s", config, exc_info=exc_info)
