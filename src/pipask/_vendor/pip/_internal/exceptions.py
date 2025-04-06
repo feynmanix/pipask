@@ -5,7 +5,6 @@ operate. This is expected to be importable from any/all files within the
 subpackage and, thus, should not depend on them.
 """
 
-
 import configparser
 import contextlib
 import locale
@@ -16,15 +15,17 @@ import sys
 from itertools import chain, groupby, repeat
 from typing import TYPE_CHECKING, Dict, Iterator, List, Optional, Union
 
-
+from requests.models import Request, Response
 from rich.console import Console, ConsoleOptions, RenderResult
+from rich.markup import escape
 from rich.text import Text
 
 if TYPE_CHECKING:
+    from hashlib import _Hash
     from typing import Literal
 
-    # from pipask._vendor.pip.metadata import BaseDistribution
-    # from pipask._vendor.pip.req.req_install import InstallRequirement
+    from pipask._vendor.pip._internal.metadata import BaseDistribution
+    from pipask._vendor.pip._internal.req.req_install import InstallRequirement
 
 logger = logging.getLogger(__name__)
 
@@ -178,6 +179,7 @@ class DiagnosticPipError(PipError):
 class ConfigurationError(PipError):
     """General exception in configuration"""
 
+
 class InstallationError(PipError):
     """General exception during installation"""
 
@@ -185,8 +187,259 @@ class InstallationError(PipError):
 class UninstallationError(PipError):
     """General exception during uninstallation"""
 
+
+class MissingPyProjectBuildRequires(DiagnosticPipError):
+    """Raised when pyproject.toml has `build-system`, but no `build-system.requires`."""
+
+    reference = "missing-pyproject-build-system-requires"
+
+    def __init__(self, *, package: str) -> None:
+        super().__init__(
+            message=f"Can not process {escape(package)}",
+            context=Text(
+                "This package has an invalid pyproject.toml file.\n"
+                "The [build-system] table is missing the mandatory `requires` key."
+            ),
+            note_stmt="This is an issue with the package mentioned above, not pip.",
+            hint_stmt=Text("See PEP 518 for the detailed specification."),
+        )
+
+
+class InvalidPyProjectBuildRequires(DiagnosticPipError):
+    """Raised when pyproject.toml an invalid `build-system.requires`."""
+
+    reference = "invalid-pyproject-build-system-requires"
+
+    def __init__(self, *, package: str, reason: str) -> None:
+        super().__init__(
+            message=f"Can not process {escape(package)}",
+            context=Text(
+                "This package has an invalid `build-system.requires` key in "
+                f"pyproject.toml.\n{reason}"
+            ),
+            note_stmt="This is an issue with the package mentioned above, not pip.",
+            hint_stmt=Text("See PEP 518 for the detailed specification."),
+        )
+
+
+class NoneMetadataError(PipError):
+    """Raised when accessing a Distribution's "METADATA" or "PKG-INFO".
+
+    This signifies an inconsistency, when the Distribution claims to have
+    the metadata file (if not, raise ``FileNotFoundError`` instead), but is
+    not actually able to produce its content. This may be due to permission
+    errors.
+    """
+
+    def __init__(
+        self,
+        dist: "BaseDistribution",
+        metadata_name: str,
+    ) -> None:
+        """
+        :param dist: A Distribution object.
+        :param metadata_name: The name of the metadata being accessed
+            (can be "METADATA" or "PKG-INFO").
+        """
+        self.dist = dist
+        self.metadata_name = metadata_name
+
+    def __str__(self) -> str:
+        # Use `dist` in the error message because its stringification
+        # includes more information, like the version and location.
+        return f"None {self.metadata_name} metadata found for distribution: {self.dist}"
+
+
+class UserInstallationInvalid(InstallationError):
+    """A --user install is requested on an environment without user site."""
+
+    def __str__(self) -> str:
+        return "User base directory is not specified"
+
+
+class InvalidSchemeCombination(InstallationError):
+    def __str__(self) -> str:
+        before = ", ".join(str(a) for a in self.args[:-1])
+        return f"Cannot set {before} and {self.args[-1]} together"
+
+
+class DistributionNotFound(InstallationError):
+    """Raised when a distribution cannot be found to satisfy a requirement"""
+
+
+class RequirementsFileParseError(InstallationError):
+    """Raised when a general error occurs parsing a requirements file line."""
+
+
+class BestVersionAlreadyInstalled(PipError):
+    """Raised when the most up-to-date version of a package is already
+    installed."""
+
+
+class BadCommand(PipError):
+    """Raised when virtualenv or a command is not found"""
+
+
 class CommandError(PipError):
     """Raised when there is an error in command-line arguments"""
+
+
+class PreviousBuildDirError(PipError):
+    """Raised when there's a previous conflicting build directory"""
+
+
+class NetworkConnectionError(PipError):
+    """HTTP connection error"""
+
+    def __init__(
+        self,
+        error_msg: str,
+        response: Optional[Response] = None,
+        request: Optional[Request] = None,
+    ) -> None:
+        """
+        Initialize NetworkConnectionError with  `request` and `response`
+        objects.
+        """
+        self.response = response
+        self.request = request
+        self.error_msg = error_msg
+        if (
+            self.response is not None
+            and not self.request
+            and hasattr(response, "request")
+        ):
+            self.request = self.response.request
+        super().__init__(error_msg, response, request)
+
+    def __str__(self) -> str:
+        return str(self.error_msg)
+
+
+class InvalidWheelFilename(InstallationError):
+    """Invalid wheel filename."""
+
+
+class UnsupportedWheel(InstallationError):
+    """Unsupported wheel."""
+
+
+class InvalidWheel(InstallationError):
+    """Invalid (e.g. corrupt) wheel."""
+
+    def __init__(self, location: str, name: str):
+        self.location = location
+        self.name = name
+
+    def __str__(self) -> str:
+        return f"Wheel '{self.name}' located at {self.location} is invalid."
+
+
+class MetadataInconsistent(InstallationError):
+    """Built metadata contains inconsistent information.
+
+    This is raised when the metadata contains values (e.g. name and version)
+    that do not match the information previously obtained from sdist filename,
+    user-supplied ``#egg=`` value, or an install requirement name.
+    """
+
+    def __init__(
+        self, ireq: "InstallRequirement", field: str, f_val: str, m_val: str
+    ) -> None:
+        self.ireq = ireq
+        self.field = field
+        self.f_val = f_val
+        self.m_val = m_val
+
+    def __str__(self) -> str:
+        return (
+            f"Requested {self.ireq} has inconsistent {self.field}: "
+            f"expected {self.f_val!r}, but metadata has {self.m_val!r}"
+        )
+
+
+class InstallationSubprocessError(DiagnosticPipError, InstallationError):
+    """A subprocess call failed."""
+
+    reference = "subprocess-exited-with-error"
+
+    def __init__(
+        self,
+        *,
+        command_description: str,
+        exit_code: int,
+        output_lines: Optional[List[str]],
+    ) -> None:
+        if output_lines is None:
+            output_prompt = Text("See above for output.")
+        else:
+            output_prompt = (
+                Text.from_markup(f"[red][{len(output_lines)} lines of output][/]\n")
+                + Text("".join(output_lines))
+                + Text.from_markup(R"[red]\[end of output][/]")
+            )
+
+        super().__init__(
+            message=(
+                f"[green]{escape(command_description)}[/] did not run successfully.\n"
+                f"exit code: {exit_code}"
+            ),
+            context=output_prompt,
+            hint_stmt=None,
+            note_stmt=(
+                "This error originates from a subprocess, and is likely not a "
+                "problem with pip."
+            ),
+        )
+
+        self.command_description = command_description
+        self.exit_code = exit_code
+
+    def __str__(self) -> str:
+        return f"{self.command_description} exited with {self.exit_code}"
+
+
+class MetadataGenerationFailed(InstallationSubprocessError, InstallationError):
+    reference = "metadata-generation-failed"
+
+    def __init__(
+        self,
+        *,
+        package_details: str,
+    ) -> None:
+        super(InstallationSubprocessError, self).__init__(
+            message="Encountered error while generating package metadata.",
+            context=escape(package_details),
+            hint_stmt="See above for details.",
+            note_stmt="This is an issue with the package mentioned above, not pip.",
+        )
+
+    def __str__(self) -> str:
+        return "metadata generation failed"
+
+
+class HashErrors(InstallationError):
+    """Multiple HashError instances rolled into one for reporting"""
+
+    def __init__(self) -> None:
+        self.errors: List["HashError"] = []
+
+    def append(self, error: "HashError") -> None:
+        self.errors.append(error)
+
+    def __str__(self) -> str:
+        lines = []
+        self.errors.sort(key=lambda e: e.order)
+        for cls, errors_of_cls in groupby(self.errors, lambda e: e.__class__):
+            lines.append(cls.head)
+            lines.extend(e.body() for e in errors_of_cls)
+        if lines:
+            return "\n".join(lines)
+        return ""
+
+    def __bool__(self) -> bool:
+        return bool(self.errors)
+
 
 class HashError(InstallationError):
     """

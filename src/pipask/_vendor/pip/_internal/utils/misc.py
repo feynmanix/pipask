@@ -1,4 +1,5 @@
 import contextlib
+import errno
 import getpass
 import hashlib
 import io
@@ -6,8 +7,13 @@ import logging
 import os
 import posixpath
 import shutil
+import stat
+import sys
+import sysconfig
 import urllib.parse
+from functools import partial
 from io import StringIO
+from itertools import filterfalse, tee, zip_longest
 from pathlib import Path
 from types import FunctionType, TracebackType
 from typing import (
@@ -15,6 +21,7 @@ from typing import (
     BinaryIO,
     Callable,
     ContextManager,
+    Dict,
     Generator,
     Iterable,
     Iterator,
@@ -24,18 +31,22 @@ from typing import (
     Tuple,
     Type,
     TypeVar,
+    Union,
     cast,
 )
 
-import errno
-import sys
-from itertools import filterfalse, tee, zip_longest
 from packaging.requirements import Requirement
+from pyproject_hooks import BuildBackendHookCaller
+from tenacity import retry, stop_after_delay, wait_fixed
 
 from pipask._vendor.pip import __version__
+from pipask._vendor.pip._internal.exceptions import CommandError, ExternallyManagedEnvironment
 from pipask._vendor.pip._internal.locations import get_major_minor_version
+from pipask._vendor.pip._internal.utils.compat import WINDOWS
+from pipask._vendor.pip._internal.utils.virtualenv import running_under_virtualenv
 
 __all__ = [
+    "rmtree",
     "display_path",
     "backup_dir",
     "ask",
@@ -48,6 +59,8 @@ __all__ = [
     "captured_stdout",
     "ensure_dir",
     "remove_auth_from_url",
+    "check_externally_managed",
+    "ConfiguredBuildBackendHookCaller",
 ]
 
 logger = logging.getLogger(__name__)
@@ -58,6 +71,7 @@ VersionInfo = Tuple[int, int, int]
 NetlocTuple = Tuple[str, Tuple[Optional[str], Optional[str]]]
 OnExc = Callable[[FunctionType, Path, BaseException], Any]
 OnErr = Callable[[FunctionType, Path, ExcInfo], Any]
+
 
 def get_pip_version() -> str:
     pip_pkg_dir = os.path.join(os.path.dirname(__file__), "..", "..")
@@ -106,6 +120,79 @@ def get_prog() -> str:
         pass
     return "pip"
 
+
+# Retry every half second for up to 3 seconds
+# Tenacity raises RetryError by default, explicitly raise the original exception
+@retry(reraise=True, stop=stop_after_delay(3), wait=wait_fixed(0.5))
+def rmtree(
+    dir: str,
+    ignore_errors: bool = False,
+    onexc: Optional[OnExc] = None,
+) -> None:
+    if ignore_errors:
+        onexc = _onerror_ignore
+    if onexc is None:
+        onexc = _onerror_reraise
+    handler: OnErr = partial(
+        # `[func, path, Union[ExcInfo, BaseException]] -> Any` is equivalent to
+        # `Union[([func, path, ExcInfo] -> Any), ([func, path, BaseException] -> Any)]`.
+        cast(Union[OnExc, OnErr], rmtree_errorhandler),
+        onexc=onexc,
+    )
+    if sys.version_info >= (3, 12):
+        # See https://docs.python.org/3.12/whatsnew/3.12.html#shutil.
+        shutil.rmtree(dir, onexc=handler)  # type: ignore
+    else:
+        shutil.rmtree(dir, onerror=handler)  # type: ignore
+
+
+def _onerror_ignore(*_args: Any) -> None:
+    pass
+
+
+def _onerror_reraise(*_args: Any) -> None:
+    raise
+
+
+def rmtree_errorhandler(
+    func: FunctionType,
+    path: Path,
+    exc_info: Union[ExcInfo, BaseException],
+    *,
+    onexc: OnExc = _onerror_reraise,
+) -> None:
+    """
+    `rmtree` error handler to 'force' a file remove (i.e. like `rm -f`).
+
+    * If a file is readonly then it's write flag is set and operation is
+      retried.
+
+    * `onerror` is the original callback from `rmtree(... onerror=onerror)`
+      that is chained at the end if the "rm -f" still fails.
+    """
+    try:
+        st_mode = os.stat(path).st_mode
+    except OSError:
+        # it's equivalent to os.path.exists
+        return
+
+    if not st_mode & stat.S_IWRITE:
+        # convert to read/write
+        try:
+            os.chmod(path, st_mode | stat.S_IWRITE)
+        except OSError:
+            pass
+        else:
+            # use the original function to repeat the operation
+            try:
+                func(path)
+                return
+            except OSError:
+                pass
+
+    if not isinstance(exc_info, BaseException):
+        _, exc_info, _ = exc_info
+    onexc(func, path, exc_info)
 
 
 def display_path(path: str) -> str:
@@ -276,6 +363,20 @@ def renames(old: str, new: str) -> None:
             os.removedirs(head)
         except OSError:
             pass
+
+
+def is_local(path: str) -> bool:
+    """
+    Return True if path is within sys.prefix, if we're running in a virtualenv.
+
+    If we're not in a virtualenv, all paths are considered "local."
+
+    Caution: this function assumes the head of path has been normalized
+    with normalize_path.
+    """
+    if not running_under_virtualenv():
+        return True
+    return path.startswith(normalize_path(sys.prefix))
 
 
 def write_output(msg: Any, *args: Any) -> None:
@@ -508,6 +609,48 @@ def hide_url(url: str) -> HiddenText:
     redacted = redact_auth_from_url(url)
     return HiddenText(url, redacted=redacted)
 
+
+def protect_pip_from_modification_on_windows(modifying_pip: bool) -> None:
+    """Protection of pip.exe from modification on Windows
+
+    On Windows, any operation modifying pip should be run as:
+        python -m pip ...
+    """
+    pip_names = [
+        "pip",
+        f"pip{sys.version_info.major}",
+        f"pip{sys.version_info.major}.{sys.version_info.minor}",
+    ]
+
+    # See https://github.com/pypa/pip/issues/1299 for more discussion
+    should_show_use_python_msg = (
+        modifying_pip and WINDOWS and os.path.basename(sys.argv[0]) in pip_names
+    )
+
+    if should_show_use_python_msg:
+        new_command = [sys.executable, "-m", "pip"] + sys.argv[1:]
+        raise CommandError(
+            "To modify pip, please run the following command:\n{}".format(
+                " ".join(new_command)
+            )
+        )
+
+
+def check_externally_managed() -> None:
+    """Check whether the current environment is externally managed.
+
+    If the ``EXTERNALLY-MANAGED`` config file is found, the current environment
+    is considered externally managed, and an ExternallyManagedEnvironment is
+    raised.
+    """
+    if running_under_virtualenv():
+        return
+    marker = os.path.join(sysconfig.get_path("stdlib"), "EXTERNALLY-MANAGED")
+    if not os.path.isfile(marker):
+        return
+    raise ExternallyManagedEnvironment.from_config(marker)
+
+
 def is_console_interactive() -> bool:
     """Is this console interactive?"""
     return sys.stdin is not None and sys.stdin.isatty()
@@ -548,3 +691,93 @@ def partition(
     """
     t1, t2 = tee(iterable)
     return filterfalse(pred, t1), filter(pred, t2)
+
+
+class ConfiguredBuildBackendHookCaller(BuildBackendHookCaller):
+    def __init__(
+        self,
+        config_holder: Any,
+        source_dir: str,
+        build_backend: str,
+        backend_path: Optional[str] = None,
+        runner: Optional[Callable[..., None]] = None,
+        python_executable: Optional[str] = None,
+    ):
+        super().__init__(
+            source_dir, build_backend, backend_path, runner, python_executable
+        )
+        self.config_holder = config_holder
+
+    def build_wheel(
+        self,
+        wheel_directory: str,
+        config_settings: Optional[Dict[str, Union[str, List[str]]]] = None,
+        metadata_directory: Optional[str] = None,
+    ) -> str:
+        cs = self.config_holder.config_settings
+        return super().build_wheel(
+            wheel_directory, config_settings=cs, metadata_directory=metadata_directory
+        )
+
+    def build_sdist(
+        self,
+        sdist_directory: str,
+        config_settings: Optional[Dict[str, Union[str, List[str]]]] = None,
+    ) -> str:
+        cs = self.config_holder.config_settings
+        return super().build_sdist(sdist_directory, config_settings=cs)
+
+    def build_editable(
+        self,
+        wheel_directory: str,
+        config_settings: Optional[Dict[str, Union[str, List[str]]]] = None,
+        metadata_directory: Optional[str] = None,
+    ) -> str:
+        cs = self.config_holder.config_settings
+        return super().build_editable(
+            wheel_directory, config_settings=cs, metadata_directory=metadata_directory
+        )
+
+    def get_requires_for_build_wheel(
+        self, config_settings: Optional[Dict[str, Union[str, List[str]]]] = None
+    ) -> List[str]:
+        cs = self.config_holder.config_settings
+        return super().get_requires_for_build_wheel(config_settings=cs)
+
+    def get_requires_for_build_sdist(
+        self, config_settings: Optional[Dict[str, Union[str, List[str]]]] = None
+    ) -> List[str]:
+        cs = self.config_holder.config_settings
+        return super().get_requires_for_build_sdist(config_settings=cs)
+
+    def get_requires_for_build_editable(
+        self, config_settings: Optional[Dict[str, Union[str, List[str]]]] = None
+    ) -> List[str]:
+        cs = self.config_holder.config_settings
+        return super().get_requires_for_build_editable(config_settings=cs)
+
+    def prepare_metadata_for_build_wheel(
+        self,
+        metadata_directory: str,
+        config_settings: Optional[Dict[str, Union[str, List[str]]]] = None,
+        _allow_fallback: bool = True,
+    ) -> str:
+        cs = self.config_holder.config_settings
+        return super().prepare_metadata_for_build_wheel(
+            metadata_directory=metadata_directory,
+            config_settings=cs,
+            _allow_fallback=_allow_fallback,
+        )
+
+    def prepare_metadata_for_build_editable(
+        self,
+        metadata_directory: str,
+        config_settings: Optional[Dict[str, Union[str, List[str]]]] = None,
+        _allow_fallback: bool = True,
+    ) -> str:
+        cs = self.config_holder.config_settings
+        return super().prepare_metadata_for_build_editable(
+            metadata_directory=metadata_directory,
+            config_settings=cs,
+            _allow_fallback=_allow_fallback,
+        )

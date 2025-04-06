@@ -17,7 +17,10 @@ dependencies = [
     "cvss (>=3.4,<4.0)",
     "packaging (>=21.3,<22.0)", # same major version as the corresponding fork of pip uses
     "platformdirs (>=3.8.1,<4.0.0)",  # same major version as the corresponding fork of pip uses
-    "urllib3 (>=1.26.17,<2.0.0)"  # same major version as the corresponding fork of pip uses
+    "urllib3 (>=1.26.17,<2.0.0)",  # same major version as the corresponding fork of pip uses
+    "requests (>=2.32.3,<3.0.0)",
+    "pyproject-hooks (>=1.2.0,<2.0.0)",
+    "tenacity (>=9.1.2,<10.0.0)"
 ]
 classifiers = [
     "License :: OSI Approved :: MIT License",
