@@ -14,6 +14,7 @@ from pipask._vendor.pip._internal.utils.logging import getLogger, indent_log
 from pipask._vendor.pip._internal.utils.misc import ask, normalize_path, renames, rmtree
 from pipask._vendor.pip._internal.utils.temp_dir import AdjacentTempDirectory, TempDirectory
 from pipask._vendor.pip._internal.utils.virtualenv import running_under_virtualenv
+from pipask.exception import PipaskException
 
 logger = getLogger(__name__)
 
@@ -359,31 +360,32 @@ class UninstallPathSet:
     def remove(self, auto_confirm: bool = False, verbose: bool = False) -> None:
         """Remove paths in ``self._paths`` with confirmation (unless
         ``auto_confirm`` is True)."""
-
-        if not self._paths:
-            logger.info(
-                "Can't uninstall '%s'. No files were found to uninstall.",
-                self._dist.raw_name,
-            )
-            return
-
-        dist_name_version = f"{self._dist.raw_name}-{self._dist.version}"
-        logger.info("Uninstalling %s:", dist_name_version)
-
-        with indent_log():
-            if auto_confirm or self._allowed_to_proceed(verbose):
-                moved = self._moved_paths
-
-                for_rename = compress_for_rename(self._paths)
-
-                for path in sorted(compact(for_rename)):
-                    moved.stash(path)
-                    logger.verbose("Removing file or directory %s", path)
-
-                for pth in self._pth.values():
-                    pth.remove()
-
-                logger.info("Successfully uninstalled %s", dist_name_version)
+        # MODIFIED for pipask
+        raise PipaskException("Pipask should not make any permanent changes")
+        # if not self._paths:
+        #     logger.info(
+        #         "Can't uninstall '%s'. No files were found to uninstall.",
+        #         self._dist.raw_name,
+        #     )
+        #     return
+        #
+        # dist_name_version = f"{self._dist.raw_name}-{self._dist.version}"
+        # logger.info("Uninstalling %s:", dist_name_version)
+        #
+        # with indent_log():
+        #     if auto_confirm or self._allowed_to_proceed(verbose):
+        #         moved = self._moved_paths
+        #
+        #         for_rename = compress_for_rename(self._paths)
+        #
+        #         for path in sorted(compact(for_rename)):
+        #             moved.stash(path)
+        #             logger.verbose("Removing file or directory %s", path)
+        #
+        #         for pth in self._pth.values():
+        #             pth.remove()
+        #
+        #         logger.info("Successfully uninstalled %s", dist_name_version)
 
     def _allowed_to_proceed(self, verbose: bool) -> bool:
         """Display which files would be deleted and prompt for confirmation"""

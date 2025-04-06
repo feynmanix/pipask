@@ -252,13 +252,15 @@ class InstallRequirement:
     def supports_pyproject_editable(self) -> bool:
         if not self.use_pep517:
             return False
-        assert self.pep517_backend
-        with self.build_env:
-            runner = runner_with_spinner_message(
-                "Checking if build backend supports build_editable"
-            )
-            with self.pep517_backend.subprocess_runner(runner):
-                return "build_editable" in self.pep517_backend._supported_features()
+        # MODIFIED for pipask
+        # assert self.pep517_backend
+        raise PipaskException("Pipask should not call package hooks")
+        # with self.build_env:
+        #     runner = runner_with_spinner_message(
+        #         "Checking if build backend supports build_editable"
+        #     )
+        #     with self.pep517_backend.subprocess_runner(runner):
+        #         return "build_editable" in self.pep517_backend._supported_features()
 
     @property
     def specifier(self) -> SpecifierSet:
