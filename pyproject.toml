@@ -10,7 +10,6 @@ requires-python = ">=3.10"
 keywords = ["pip", "security"]
 license = "MIT"
 dependencies = [
-    "click (>=8.1.8,<9.0.0)",
     "pydantic (>=2.10.6,<3.0.0)",
     "httpx (>=0.28.1,<0.29.0)",
     "rich (>=13.9.4,<14.0.0)",
@@ -42,7 +41,7 @@ repository = "https://github.com/feynmanix/pipask"
 documentation = "https://github.com/feynmanix/pipask/blob/main/README.md"
 
 [project.scripts]
-pipask = "pipask.main:cli"
+pipask = "pipask.main:main"
 
 [tool.poetry]
 packages = [{ include = "pipask", from = "src" }]
@@ -79,6 +78,7 @@ include = ["pipask"]
 exclude = [
     "**/__pycache__",
     "**/tests",
+    "src/pipask/_vendor"
 ]
 ignore = []
 

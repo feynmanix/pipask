@@ -1,33 +1,9 @@
-from dataclasses import dataclass
-import click
-from rich.progress import Progress, TextColumn, TaskID, TimeElapsedColumn
-from rich.progress import ProgressColumn
-from rich.text import Text
+from rich.console import Console, RenderableType
+from rich.progress import Progress, ProgressColumn, Task, TaskID, TextColumn, TimeElapsedColumn
 from rich.spinner import Spinner
-from rich.progress import Task
-from rich.console import RenderableType
+from rich.text import Text
+
 from pipask.checks.types import CheckResultType
-from rich.console import Console
-import sys
-
-
-@dataclass
-class ParsedArgs:
-    other_args: list[str]
-    help: bool
-    dry_run: bool
-    report: str | None
-    raw_args: list[str]
-
-    @staticmethod
-    def from_click_context(ctx: click.Context) -> "ParsedArgs":
-        return ParsedArgs(
-            other_args=ctx.args,
-            help=ctx.params["help"],
-            dry_run=ctx.params["dry_run"],
-            report=ctx.params["report"] or None,
-            raw_args=sys.argv[1:],
-        )
 
 
 class CheckTask:
