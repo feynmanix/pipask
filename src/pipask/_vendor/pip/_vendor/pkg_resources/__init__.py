@@ -82,8 +82,8 @@ from pip._internal.utils._jaraco_text import (
     join_continuation,
 )
 
-from pip._vendor import platformdirs
-from pip._vendor import packaging
+import platformdirs
+import packaging
 
 __import__('pip._vendor.packaging.version')
 __import__('pip._vendor.packaging.specifiers')
