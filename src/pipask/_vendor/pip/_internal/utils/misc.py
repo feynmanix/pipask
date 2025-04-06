@@ -63,6 +63,8 @@ __all__ = [
     "ConfiguredBuildBackendHookCaller",
 ]
 
+from pipask.exception import PipaskException
+
 logger = logging.getLogger(__name__)
 
 T = TypeVar("T")
@@ -714,18 +716,22 @@ class ConfiguredBuildBackendHookCaller(BuildBackendHookCaller):
         config_settings: Optional[Dict[str, Union[str, List[str]]]] = None,
         metadata_directory: Optional[str] = None,
     ) -> str:
-        cs = self.config_holder.config_settings
-        return super().build_wheel(
-            wheel_directory, config_settings=cs, metadata_directory=metadata_directory
-        )
+        # MODIFIED for pipask
+        raise PipaskException("Pipask should not need to call any hooks")
+        # cs = self.config_holder.config_settings
+        # return super().build_wheel(
+        #     wheel_directory, config_settings=cs, metadata_directory=metadata_directory
+        # )
 
     def build_sdist(
         self,
         sdist_directory: str,
         config_settings: Optional[Dict[str, Union[str, List[str]]]] = None,
     ) -> str:
-        cs = self.config_holder.config_settings
-        return super().build_sdist(sdist_directory, config_settings=cs)
+        # MODIFIED for pipask
+        raise PipaskException("Pipask should not need to call any hooks")
+        # cs = self.config_holder.config_settings
+        # return super().build_sdist(sdist_directory, config_settings=cs)
 
     def build_editable(
         self,
@@ -733,28 +739,36 @@ class ConfiguredBuildBackendHookCaller(BuildBackendHookCaller):
         config_settings: Optional[Dict[str, Union[str, List[str]]]] = None,
         metadata_directory: Optional[str] = None,
     ) -> str:
-        cs = self.config_holder.config_settings
-        return super().build_editable(
-            wheel_directory, config_settings=cs, metadata_directory=metadata_directory
-        )
+        # MODIFIED for pipask
+        raise PipaskException("Pipask should not need to call any hooks")
+        # cs = self.config_holder.config_settings
+        # return super().build_editable(
+        #     wheel_directory, config_settings=cs, metadata_directory=metadata_directory
+        # )
 
     def get_requires_for_build_wheel(
         self, config_settings: Optional[Dict[str, Union[str, List[str]]]] = None
     ) -> List[str]:
-        cs = self.config_holder.config_settings
-        return super().get_requires_for_build_wheel(config_settings=cs)
+        # MODIFIED for pipask
+        raise PipaskException("Pipask should not need to call any hooks")
+        # cs = self.config_holder.config_settings
+        # return super().get_requires_for_build_wheel(config_settings=cs)
 
     def get_requires_for_build_sdist(
         self, config_settings: Optional[Dict[str, Union[str, List[str]]]] = None
     ) -> List[str]:
-        cs = self.config_holder.config_settings
-        return super().get_requires_for_build_sdist(config_settings=cs)
+        # MODIFIED for pipask
+        raise PipaskException("Pipask should not need to call any hooks")
+        # cs = self.config_holder.config_settings
+        # return super().get_requires_for_build_sdist(config_settings=cs)
 
     def get_requires_for_build_editable(
         self, config_settings: Optional[Dict[str, Union[str, List[str]]]] = None
     ) -> List[str]:
-        cs = self.config_holder.config_settings
-        return super().get_requires_for_build_editable(config_settings=cs)
+        # MODIFIED for pipask
+        raise PipaskException("Pipask should not need to call any hooks")
+        # cs = self.config_holder.config_settings
+        # return super().get_requires_for_build_editable(config_settings=cs)
 
     def prepare_metadata_for_build_wheel(
         self,
@@ -762,12 +776,14 @@ class ConfiguredBuildBackendHookCaller(BuildBackendHookCaller):
         config_settings: Optional[Dict[str, Union[str, List[str]]]] = None,
         _allow_fallback: bool = True,
     ) -> str:
-        cs = self.config_holder.config_settings
-        return super().prepare_metadata_for_build_wheel(
-            metadata_directory=metadata_directory,
-            config_settings=cs,
-            _allow_fallback=_allow_fallback,
-        )
+        # MODIFIED for pipask
+        raise PipaskException("Pipask should not need to call any hooks")
+        # cs = self.config_holder.config_settings
+        # return super().prepare_metadata_for_build_wheel(
+        #     metadata_directory=metadata_directory,
+        #     config_settings=cs,
+        #     _allow_fallback=_allow_fallback,
+        # )
 
     def prepare_metadata_for_build_editable(
         self,
@@ -775,9 +791,11 @@ class ConfiguredBuildBackendHookCaller(BuildBackendHookCaller):
         config_settings: Optional[Dict[str, Union[str, List[str]]]] = None,
         _allow_fallback: bool = True,
     ) -> str:
-        cs = self.config_holder.config_settings
-        return super().prepare_metadata_for_build_editable(
-            metadata_directory=metadata_directory,
-            config_settings=cs,
-            _allow_fallback=_allow_fallback,
-        )
+        # MODIFIED for pipask
+        raise PipaskException("Pipask should not need to call any hooks")
+        # cs = self.config_holder.config_settings
+        # return super().prepare_metadata_for_build_editable(
+        #     metadata_directory=metadata_directory,
+        #     config_settings=cs,
+        #     _allow_fallback=_allow_fallback,
+        # )
