@@ -265,8 +265,9 @@ class InstallCommand(RequirementCommand):
             ),
         )
 
+    # MODIFIED for pipask: updated return type
     @with_cleanup
-    def run(self, options: Values, args: List[str]) -> int:
+    def run(self, options: Values, args: List[str]) -> int | InstallationReport:
         if options.use_user_site and options.target_dir is not None:
             raise CommandError("Can not combine '--user' and '--target'")
 
@@ -381,32 +382,30 @@ class InstallCommand(RequirementCommand):
                 reqs, check_supported_wheels=not options.target_dir
             )
 
-            if options.json_report_file:
-                report = InstallationReport(requirement_set.requirements_to_install)
-                if options.json_report_file == "-":
-                    print_json(data=report.to_dict())
-                else:
-                    with open(options.json_report_file, "w", encoding="utf-8") as f:
-                        json.dump(report.to_dict(), f, indent=2, ensure_ascii=False)
-
-            if options.dry_run:
-                # In non dry-run mode, the legacy versions and specifiers check
-                # will be done as part of conflict detection.
-                requirement_set.warn_legacy_versions_and_specifiers()
-                would_install_items = sorted(
-                    (r.metadata["name"], r.metadata["version"])
-                    for r in requirement_set.requirements_to_install
-                )
-                if would_install_items:
-                    write_output(
-                        "Would install %s",
-                        " ".join("-".join(item) for item in would_install_items),
-                    )
-                return SUCCESS
-
             # MODIFIED for pipask
-            raise PipaskException("Pipask should not need to execute any installs")
+            return InstallationReport(requirement_set.requirements_to_install)
+            # if options.json_report_file:
+            #     report = InstallationReport(requirement_set.requirements_to_install)
+            #     if options.json_report_file == "-":
+            #         print_json(data=report.to_dict())
+            #     else:
+            #         with open(options.json_report_file, "w", encoding="utf-8") as f:
+            #             json.dump(report.to_dict(), f, indent=2, ensure_ascii=False)
 
+            # if options.dry_run:
+            #     # In non dry-run mode, the legacy versions and specifiers check
+            #     # will be done as part of conflict detection.
+            #     requirement_set.warn_legacy_versions_and_specifiers()
+            #     would_install_items = sorted(
+            #         (r.metadata["name"], r.metadata["version"])
+            #         for r in requirement_set.requirements_to_install
+            #     )
+            #     if would_install_items:
+            #         write_output(
+            #             "Would install %s",
+            #             " ".join("-".join(item) for item in would_install_items),
+            #         )
+            #     return SUCCESS
         #     try:
         #         pip_req = requirement_set.get_requirement("pip")
         #     except KeyError:
@@ -511,14 +510,14 @@ class InstallCommand(RequirementCommand):
 
             return ERROR
 
-        if options.target_dir:
-            assert target_temp_dir
-            self._handle_target_dir(
-                options.target_dir, target_temp_dir, options.upgrade
-            )
-        if options.root_user_action == "warn":
-            warn_if_run_as_root()
-        return SUCCESS
+        # if options.target_dir:
+        #     assert target_temp_dir
+        #     self._handle_target_dir(
+        #         options.target_dir, target_temp_dir, options.upgrade
+        #     )
+        # if options.root_user_action == "warn":
+        #     warn_if_run_as_root()
+        # return SUCCESS
 
     def _handle_target_dir(
         self, target_dir: str, target_temp_dir: TempDirectory, upgrade: bool
