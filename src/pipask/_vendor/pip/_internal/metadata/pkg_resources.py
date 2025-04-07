@@ -43,7 +43,11 @@ class InMemoryMetadata:
     This also maps metadata decoding exceptions to our internal exception type.
     """
 
-    def __init__(self, metadata: Mapping[str, bytes], wheel_name: str) -> None:
+    def __init__(
+        self,
+        metadata: Mapping[str, bytes],
+        wheel_name: Optional[str]  # MODIFIED for pipask
+    ) -> None:
         self._metadata = metadata
         self._wheel_name = wheel_name
 
@@ -100,7 +104,7 @@ class Distribution(BaseDistribution):
     def from_metadata_file_contents(
         cls,
         metadata_contents: bytes,
-        filename: str,
+        filename: Optional[str],  # MODIFIED for pipask
         project_name: str,
     ) -> BaseDistribution:
         metadata_dict = {

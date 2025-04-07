@@ -108,7 +108,7 @@ def get_wheel_distribution(wheel: Wheel, canonical_name: str) -> BaseDistributio
 
 def get_metadata_distribution(
     metadata_contents: bytes,
-    filename: str,
+    filename: Optional[str], # MODIFIED for pipask
     canonical_name: str,
 ) -> BaseDistribution:
     """Get the dist representation of the specified METADATA file contents.
