@@ -113,7 +113,7 @@ class Distribution(BaseDistribution):
     def from_metadata_file_contents(
         cls,
         metadata_contents: bytes,
-        filename: str,
+        filename: Optional[str],  # MODIFIED for pipask
         project_name: str,
     ) -> BaseDistribution:
         # Generate temp dir to contain the metadata file, and write the file contents.

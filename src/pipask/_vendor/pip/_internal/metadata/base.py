@@ -116,7 +116,7 @@ class BaseDistribution(Protocol):
     def from_metadata_file_contents(
         cls,
         metadata_contents: bytes,
-        filename: str,
+        filename: Optional[str],  # MODIFIED for pipask
         project_name: str,
     ) -> "BaseDistribution":
         """Load the distribution from the contents of a METADATA file.
