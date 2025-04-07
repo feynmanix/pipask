@@ -52,6 +52,7 @@ from pipask._vendor.pip._internal.utils.misc import (
 from pipask._vendor.pip._internal.utils.temp_dir import TempDirectory
 from pipask._vendor.pip._internal.utils.unpacking import unpack_file
 from pipask._vendor.pip._internal.vcs import vcs
+from pipask.infra.metadata import fetch_metadata_from_pypi
 
 logger = getLogger(__name__)
 
@@ -368,9 +369,12 @@ class RequirementPreparer:
             )
             return None
         # Try PEP 658 metadata first, then fall back to lazy wheel if unavailable.
-        return self._fetch_metadata_using_link_data_attr(
-            req
-        ) or self._fetch_metadata_using_lazy_wheel(req.link)
+        return (
+            self._fetch_metadata_using_link_data_attr(req) 
+            or self._fetch_metadata_using_lazy_wheel(req.link)
+            # MODIFIED for pipask:
+            or fetch_metadata_from_pypi(req, self._session)
+        )
 
     def _fetch_metadata_using_link_data_attr(
         self,

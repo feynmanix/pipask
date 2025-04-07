@@ -1,12 +1,14 @@
-from pipask.infra.repo_client import REPO_URL_REGEX
+import logging
 from datetime import datetime
 from typing import List, Optional
 
 import httpx
 from pydantic import BaseModel, Field
-import logging
 
-from pipask.utils import simple_get_request
+from pipask._vendor.pip._internal.models.index import PyPI  # type: ignore
+from pipask._vendor.pip._internal.network.session import PipSession  # type: ignore
+from pipask.infra.repo_client import REPO_URL_REGEX
+from pipask.utils import simple_get_request, simple_get_request_sync
 
 logger = logging.getLogger(__name__)
 
@@ -75,6 +77,13 @@ class ProjectInfo(BaseModel):
     version: str
     yanked: bool = False
     yanked_reason: Optional[str] = None
+    summary: Optional[str] = None
+    author_email: Optional[str] = None
+    author: Optional[str] = None
+    download_url: Optional[str] = None
+    requires_python: Optional[str] = None
+    requires_dist: Optional[List[str]] = None
+    provides_extra: Optional[List[str]] = None
 
 
 class VulnerabilityPypi(BaseModel):
@@ -88,19 +97,21 @@ class VulnerabilityPypi(BaseModel):
     withdrawn: Optional[datetime] = None
 
 
-class ReleaseUrl(BaseModel):
+class ProjectReleaseFile(BaseModel):
     filename: str
     upload_time: datetime = Field(..., alias="upload_time_iso_8601")
     yanked: bool = False
+    digests: dict[str, str] = Field(default_factory=dict)
 
 
 class ProjectResponse(BaseModel):
     info: ProjectInfo
+    releases: dict[str, list[ProjectReleaseFile]] = Field(default_factory=dict)
 
 
 class ReleaseResponse(BaseModel):
     info: ProjectInfo
-    urls: list[ReleaseUrl] = Field(default_factory=list)
+    urls: list[ProjectReleaseFile] = Field(default_factory=list)
     vulnerabilities: List[VulnerabilityPypi] = Field(default_factory=list)
 
 
@@ -117,27 +128,46 @@ class DistributionsResponse(BaseModel):
     # versions: List[str]
 
 
+_pypi_url = PyPI.pypi_url
+_simple_url = PyPI.simple_url
+
+
+def _release_info_url(project_name: str, version: str) -> str:
+    # See https://docs.pypi.org/api/json/#get-a-release for API documentation
+    return f"{_pypi_url}/{project_name}/{version}/json"
+
+
+def _project_info_url(project_name: str) -> str:
+    # See https://docs.pypi.org/api/json/#project-metadata for API documentation
+    return f"{_pypi_url}/{project_name}/json"
+
+
 class PypiClient:
     def __init__(self):
         self.client = httpx.AsyncClient(follow_redirects=True)
 
     async def get_project_info(self, project_name: str) -> ProjectResponse | None:
         """Get project metadata from PyPI."""
-        url = f"https://pypi.org/pypi/{project_name}/json"
-        return await simple_get_request(url, self.client, ProjectResponse)
+        return await simple_get_request(_project_info_url(project_name), self.client, ProjectResponse)
 
     async def get_release_info(self, project_name: str, version: str) -> ReleaseResponse | None:
         """Get metadata for a specific project release from PyPI."""
-        # See https://docs.pypi.org/api/json/#get-a-release for API documentation
-        url = f"https://pypi.org/pypi/{project_name}/{version}/json"
-        return await simple_get_request(url, self.client, ReleaseResponse)
+        return await simple_get_request(_release_info_url(project_name, version), self.client, ReleaseResponse)
 
     async def get_distributions(self, project_name: str) -> DistributionsResponse | None:
         """Get all distribution download URLs for a project's available releases from PyPI."""
         # See https://docs.pypi.org/api/index-api/#get-distributions-for-project
-        url = f"https://pypi.org/simple/{project_name}/"
+        url = f"{_simple_url}/{project_name}/"
         headers = {"Accept": "application/vnd.pypi.simple.v1+json"}
         return await simple_get_request(url, self.client, DistributionsResponse, headers=headers)
 
     async def aclose(self) -> None:
         await self.client.aclose()
+
+
+def get_pypi_release_info_sync(project_name: str, version: str, request_session: PipSession):
+    return simple_get_request_sync(_release_info_url(project_name, version), request_session, ReleaseResponse)
+
+
+def get_pypi_project_info_sync(project_name: str, request_session: PipSession):
+    return simple_get_request_sync(_project_info_url(project_name), request_session, ProjectResponse)
