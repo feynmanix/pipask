@@ -4,7 +4,7 @@ from unittest.mock import AsyncMock
 
 from pipask.checks.package_age import PackageAge
 from pipask.checks.types import CheckResult, CheckResultType
-from pipask.infra.pypi import ReleaseResponse, ProjectInfo, DistributionsResponse, Distribution, ReleaseUrl
+from pipask.infra.pypi import ReleaseResponse, ProjectInfo, DistributionsResponse, Distribution, ProjectReleaseFile
 from pipask.infra.pip import InstallationReportItem, InstallationReportItemMetadata, InstallationReportItemDownloadInfo
 
 PACKAGE_NAME = "package"
@@ -85,7 +85,7 @@ async def test_too_old_release():
                 version=PACKAGE_VERSION,
             ),
             urls=[
-                ReleaseUrl(
+                ProjectReleaseFile(
                     filename="package-1.0.0.tar.gz",
                     upload_time_iso_8601=now - datetime.timedelta(days=400),
                     yanked=False,
@@ -130,7 +130,7 @@ async def test_successful_check():
                 version=PACKAGE_VERSION,
             ),
             urls=[
-                ReleaseUrl(
+                ProjectReleaseFile(
                     filename="package-2.0.0.tar.gz",
                     upload_time_iso_8601=now - datetime.timedelta(days=1),
                     yanked=False,

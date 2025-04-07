@@ -1,7 +1,8 @@
-from pipask.infra.pypi import PypiClient
-
 from datetime import datetime
+
 import pytest
+
+from pipask.infra.pypi import PypiClient
 
 
 @pytest.fixture
