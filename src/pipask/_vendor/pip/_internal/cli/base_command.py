@@ -18,7 +18,7 @@ from pipask._vendor.pip._internal.cli.parser import ConfigOptionParser, Updating
 from pipask._vendor.pip._internal.cli.status_codes import (
     ERROR,
     PREVIOUS_BUILD_DIR_ERROR,
-    UNKNOWN_ERROR,
+    SUCCESS, UNKNOWN_ERROR,
     VIRTUALENV_NOT_FOUND,
 )
 from pipask._vendor.pip._internal.exceptions import (
@@ -30,6 +30,7 @@ from pipask._vendor.pip._internal.exceptions import (
     PreviousBuildDirError,
     UninstallationError,
 )
+from pipask._vendor.pip._internal.models.installation_report import InstallationReport
 from pipask._vendor.pip._internal.utils.filesystem import check_path_owner
 from pipask._vendor.pip._internal.utils.logging import BrokenStdoutLoggingError, setup_logging
 from pipask._vendor.pip._internal.utils.misc import get_prog, normalize_path
@@ -88,7 +89,8 @@ class Command(CommandContextMixIn):
         # are present.
         assert not hasattr(options, "no_index")
 
-    def run(self, options: Values, args: List[str]) -> int:
+    # MODIFIED for pipask: updated return type
+    def run(self, options: Values, args: List[str]) -> int | InstallationReport:
         raise NotImplementedError
 
     def parse_args(self, args: List[str]) -> Tuple[Values, List[str]]:
@@ -231,6 +233,8 @@ class Command(CommandContextMixIn):
             else:
                 run = self.run
                 rich_traceback.install(show_locals=True)
-            return run(options, args)
+            # MODIFIED for pipask
+            run(options, args)
+            return SUCCESS
         finally:
             self.handle_pip_version_check(options)
