@@ -12,6 +12,7 @@ from packaging.version import LegacyVersion
 from pipask._vendor.pip._internal.distributions import make_distribution_for_install_requirement
 from pipask._vendor.pip._internal.metadata import get_default_environment
 from pipask._vendor.pip._internal.metadata.base import DistributionVersion
+from pipask._vendor.pip._internal.network.session import PipSession
 from pipask._vendor.pip._internal.req.req_install import InstallRequirement
 from pipask._vendor.pip._internal.utils.deprecation import deprecated
 
@@ -98,14 +99,17 @@ def check_package_set(
     return missing, conflicting
 
 
-def check_install_conflicts(to_install: List[InstallRequirement]) -> ConflictDetails:
+def check_install_conflicts(
+    to_install: List[InstallRequirement],
+    session: PipSession # MODIFIED for pipask: added argument
+) -> ConflictDetails:
     """For checking if the dependency graph would be consistent after \
     installing given requirements
     """
     # Start from the current state
     package_set, _ = create_package_set_from_installed()
     # Install packages
-    would_be_installed = _simulate_installation_of(to_install, package_set)
+    would_be_installed = _simulate_installation_of(to_install, package_set, session) # MODIFIED for pipask: added argument
 
     # Only warn about directly-dependent packages; create a whitelist of them
     whitelist = _create_whitelist(would_be_installed, package_set)
@@ -119,7 +123,9 @@ def check_install_conflicts(to_install: List[InstallRequirement]) -> ConflictDet
 
 
 def _simulate_installation_of(
-    to_install: List[InstallRequirement], package_set: PackageSet
+    to_install: List[InstallRequirement],
+    package_set: PackageSet,
+    session: PipSession # MODIFIED for pipask: added argument
 ) -> Set[NormalizedName]:
     """Computes the version of packages after installing to_install."""
     # Keep track of packages that were installed
@@ -127,7 +133,7 @@ def _simulate_installation_of(
 
     # Modify it as installing requirement_set would (assuming no errors)
     for inst_req in to_install:
-        abstract_dist = make_distribution_for_install_requirement(inst_req)
+        abstract_dist = make_distribution_for_install_requirement(inst_req, session) # MODIFIED for pipask: added argument
         dist = abstract_dist.get_metadata_distribution()
         name = dist.canonical_name
         package_set[name] = PackageDetails(dist.version, list(dist.iter_dependencies()))

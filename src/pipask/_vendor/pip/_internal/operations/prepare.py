@@ -63,9 +63,10 @@ def _get_prepared_distribution(
     finder: PackageFinder,
     build_isolation: bool,
     check_build_deps: bool,
+    session: PipSession, # MODIFIED for pipask: added argument
 ) -> BaseDistribution:
     """Prepare a distribution for installation."""
-    abstract_dist = make_distribution_for_install_requirement(req)
+    abstract_dist = make_distribution_for_install_requirement(req, session) # MODIFIED for pipask
     tracker_id = abstract_dist.build_tracker_id
     if tracker_id is not None:
         with build_tracker.track(req, tracker_id):
@@ -647,6 +648,7 @@ class RequirementPreparer:
             self.finder,
             self.build_isolation,
             self.check_build_deps,
+            self._session # MODIFIED for pipask: added argument
         )
         return dist
 
@@ -703,6 +705,7 @@ class RequirementPreparer:
                 self.finder,
                 self.build_isolation,
                 self.check_build_deps,
+                self._session # MODIFIED for pipask: added argument
             )
 
             req.check_if_exists(self.use_user_site)

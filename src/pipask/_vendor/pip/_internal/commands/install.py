@@ -577,7 +577,7 @@ class InstallCommand(RequirementCommand):
         self, to_install: List[InstallRequirement]
     ) -> Optional[ConflictDetails]:
         try:
-            return check_install_conflicts(to_install)
+            return check_install_conflicts(to_install, self._session) # MODIFIED for pipask: added argument
         except Exception:
             logger.exception(
                 "Error while checking for conflicts. Please file an issue on "
