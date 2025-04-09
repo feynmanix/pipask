@@ -10,15 +10,14 @@ from packaging.utils import (
 )
 from packaging.version import Version
 
-import pipask._vendor.pip._internal.distributions.base  # type: ignore
-import pipask._vendor.pip._internal.utils.temp_dir  # type: ignore
-from pipask._vendor.pip._internal.metadata import BaseDistribution, get_metadata_distribution  # type: ignore
-from pipask._vendor.pip._internal.models.index import PyPI  # type: ignore
-from pipask._vendor.pip._internal.models.link import Link  # type: ignore
-from pipask._vendor.pip._internal.network.session import PipSession  # type: ignore
-from pipask._vendor.pip._internal.req import InstallRequirement  # type: ignore
+import pipask._vendor.pip._internal.distributions.base
+import pipask._vendor.pip._internal.utils.temp_dir
+from pipask._vendor.pip._internal.metadata import BaseDistribution, get_metadata_distribution
+from pipask._vendor.pip._internal.models.index import PyPI
+from pipask._vendor.pip._internal.models.link import Link
+from pipask._vendor.pip._internal.network.session import PipSession
 from pipask._vendor.pip._internal.req.req_install import InstallRequirement
-from pipask._vendor.pip._internal.utils.hashes import Hashes  # type: ignore
+from pipask._vendor.pip._internal.utils.hashes import Hashes
 from pipask.exception import PipaskException
 from pipask.infra.pypi import (
     ProjectReleaseFile,
@@ -68,7 +67,7 @@ def get_pypi_metadata_distribution(
     version: Version,
     pip_session: PipSession,
 ) -> BaseDistribution | None:
-    if pipask._vendor.pip._internal.utils.temp_dir._tempdir_manager is None:  # type: ignore
+    if pipask._vendor.pip._internal.utils.temp_dir._tempdir_manager is None:
         raise RuntimeError(
             "Tempdir manager is not initialized. This is required by pip._internal.metadata.importlib._dists.Distribution.from_metadata_file_contents"
         )
