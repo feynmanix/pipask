@@ -1,19 +1,27 @@
 import json
-import logging
 import os
 import subprocess
 import sys
 import time
+from typing import Optional, Sequence
 
 from pydantic import BaseModel, Field
 
-from pipask._vendor.pip._internal.cli.main_parser import create_main_parser  # pyright: ignore
-from pipask._vendor.pip._internal.commands import commands_dict  # pyright: ignore
-from pipask._vendor.pip._internal.commands.install import InstallCommand  # pyright: ignore
+import pipask._vendor.pip._internal.utils.logging
+from pipask._vendor.pip._internal.cli.main_parser import create_main_parser
+from pipask._vendor.pip._internal.commands import commands_dict
+from pipask._vendor.pip._internal.commands.install import InstallCommand
+from pipask._vendor.pip._internal.models.installation_report import InstallationReport
+from pipask._vendor.pip._internal.req.req_install import InstallRequirement
+from pipask._vendor.pip._internal.utils.direct_url_helpers import direct_url_for_editable, direct_url_from_link
+from pipask._vendor.pip._internal.utils.temp_dir import (
+    global_tempdir_manager,
+    tempdir_registry,
+)
 from pipask.cli_args import InstallArgs, PipCommandArgs
-from pipask.exception import HandoverToPipException, PipaskException, PipAskResolutionException
+from pipask.exception import HandoverToPipException, PipaskException
 
-logger = logging.getLogger(__name__)
+logger = pipask._vendor.pip._internal.utils.logging.getLogger(__name__)
 
 
 def _get_pip_command() -> list[str]:
@@ -75,13 +83,57 @@ def parse_pip_install_arguments(args: PipCommandArgs) -> InstallArgs:
     return InstallArgs(raw_args=args.raw_args, raw_options=install_options, install_args=install_args)
 
 
+def _get_download_info(req: InstallRequirement) -> Optional["InstallationReportItemDownloadInfo"]:
+    download_info = None
+    if req.download_info is not None:
+        download_info = req.download_info
+    elif req.editable:
+        download_info = direct_url_for_editable(req.unpacked_source_directory)
+    elif req.link is not None:
+        download_info = direct_url_from_link(req.link)
+
+    if download_info is None:
+        return None
+    return InstallationReportItemDownloadInfo.model_validate(download_info.to_dict())
+
+
+def _get_metadata_dict(req: InstallRequirement) -> dict[str, str]:
+    if req.metadata_distribution is not None:
+        return req.metadata_distribution.metadata_dict
+    return req.get_dist().metadata_dict
+
+
 def get_pip_install_report_from_pypi(args: InstallArgs) -> "PipInstallReport":
     """
     Get install report by getting all the metadata possible from PyPI or from safe sources such as built wheels.
 
     :raises PipAskResolutionException: if resolution of versions to install is not possible from safe sources
     """
-    raise PipAskResolutionException("TODO")  # TODO
+
+    install_command = InstallCommand(name="install", summary="", isolated=args.isolated)
+    with install_command.main_context():
+        # Modified version of pip._internal.cli.base_command.Command.main()
+        install_command.tempdir_registry = install_command.enter_context(tempdir_registry())
+        install_command.enter_context(global_tempdir_manager())
+        install_command.verbosity = args.verbose - args.quiet
+
+        install_requirements: int | Sequence[InstallRequirement] = install_command.run(args.options, args.install_args)
+        if isinstance(install_requirements, int):
+            raise RuntimeError("install command did not return install requirements")
+
+        install_report_items = [
+            # Similar to pipask._vendor.pip._internal.models.installation_report.InstallationReport
+            InstallationReportItem(
+                requested=ireq.user_supplied,
+                is_direct=ireq.is_direct,
+                is_yanked=ireq.link.is_yanked if ireq.link else False,
+                download_info=_get_download_info(ireq),
+                metadata=InstallationReportItemMetadata.model_validate(_get_metadata_dict(ireq)),
+            )
+            for ireq in install_requirements
+        ]
+
+    return PipInstallReport(version=InstallationReport([]).to_dict()["version"], install=install_report_items)
 
 
 def get_pip_install_report_unsafe(parsed_args: InstallArgs) -> "PipInstallReport":
@@ -128,7 +180,7 @@ class InstallationReportItemDownloadInfo(BaseModel):
 
 class InstallationReportItem(BaseModel):
     metadata: InstallationReportItemMetadata
-    download_info: InstallationReportItemDownloadInfo
+    download_info: InstallationReportItemDownloadInfo | None
     requested: bool
     is_yanked: bool
     is_direct: bool
