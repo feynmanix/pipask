@@ -523,7 +523,11 @@ class RequirementPreparer:
                 # The file is not available, attempt to fetch only metadata
                 metadata_dist = self._fetch_metadata_only(req)
                 if metadata_dist is not None:
-                    req.needs_more_preparation = True
+                    # MODIFIED for pipask: we don't need more preparation as metadata is the only thing we care about
+                    #     Also, store the metadata dist in the requirement so that
+                    #     we can access it later when building the install report
+                    # req.needs_more_preparation = True
+                    req.metadata_distribution = metadata_dist
                     return metadata_dist
 
             # None of the optimizations worked, fully prepare the requirement
