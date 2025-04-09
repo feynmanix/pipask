@@ -72,6 +72,9 @@ class InstallRequirement:
     installing the said requirement.
     """
 
+    # MODIFIED for pipask: added field to make access to metadata easier
+    metadata_distribution: Optional[BaseDistribution] = None
+
     def __init__(
         self,
         req: Optional[Requirement],

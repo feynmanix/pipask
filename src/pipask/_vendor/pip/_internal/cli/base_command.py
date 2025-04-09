@@ -8,7 +8,7 @@ import os
 import sys
 import traceback
 from optparse import Values
-from typing import Any, Callable, List, Optional, Tuple
+from typing import Any, Callable, List, Optional, Sequence, Tuple
 
 from rich import traceback as rich_traceback
 
@@ -31,6 +31,7 @@ from pipask._vendor.pip._internal.exceptions import (
     UninstallationError,
 )
 from pipask._vendor.pip._internal.models.installation_report import InstallationReport
+from pipask._vendor.pip._internal.req import InstallRequirement
 from pipask._vendor.pip._internal.utils.filesystem import check_path_owner
 from pipask._vendor.pip._internal.utils.logging import BrokenStdoutLoggingError, setup_logging
 from pipask._vendor.pip._internal.utils.misc import get_prog, normalize_path
@@ -90,7 +91,7 @@ class Command(CommandContextMixIn):
         assert not hasattr(options, "no_index")
 
     # MODIFIED for pipask: updated return type
-    def run(self, options: Values, args: List[str]) -> int | InstallationReport:
+    def run(self, options: Values, args: List[str]) -> int | Sequence[InstallRequirement]:
         raise NotImplementedError
 
     def parse_args(self, args: List[str]) -> Tuple[Values, List[str]]:

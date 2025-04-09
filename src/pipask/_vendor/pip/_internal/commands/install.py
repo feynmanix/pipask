@@ -5,7 +5,7 @@ import os
 import shutil
 import site
 from optparse import SUPPRESS_HELP, Values
-from typing import List, Optional
+from typing import List, Optional, Sequence
 
 from rich import print_json
 
@@ -267,7 +267,7 @@ class InstallCommand(RequirementCommand):
 
     # MODIFIED for pipask: updated return type
     @with_cleanup
-    def run(self, options: Values, args: List[str]) -> int | InstallationReport:
+    def run(self, options: Values, args: List[str]) -> int | Sequence[InstallRequirement]:
         if options.use_user_site and options.target_dir is not None:
             raise CommandError("Can not combine '--user' and '--target'")
 
@@ -383,7 +383,7 @@ class InstallCommand(RequirementCommand):
             )
 
             # MODIFIED for pipask
-            return InstallationReport(requirement_set.requirements_to_install)
+            return requirement_set.requirements_to_install
             # if options.json_report_file:
             #     report = InstallationReport(requirement_set.requirements_to_install)
             #     if options.json_report_file == "-":
