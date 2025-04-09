@@ -5,10 +5,12 @@ import sys
 from contextlib import aclosing
 from typing import Awaitable
 
+from rich import traceback as rich_traceback
 from rich.console import Console
 from rich.logging import RichHandler
 from rich.prompt import Confirm
 
+import pipask._vendor.pip._internal.utils.logging
 from pipask.checks.license import LicenseChecker
 from pipask.checks.package_age import PackageAge
 from pipask.checks.package_downloads import PackageDownloadsChecker
@@ -18,7 +20,7 @@ from pipask.checks.types import CheckResult
 from pipask.checks.vulnerabilities import ReleaseVulnerabilityChecker
 from pipask.cli_args import InstallArgs
 from pipask.cli_helpers import SimpleTaskProgress
-from pipask.exception import PipAskResolutionException, HandoverToPipException
+from pipask.exception import HandoverToPipException, PipAskResolutionException
 from pipask.infra.pip import (
     InstallationReportItem,
     PipInstallReport,
@@ -37,66 +39,80 @@ from pipask.report import print_report
 console = Console()
 
 # Get log level from environment variable, default to INFO if not set
-pipask_log_level = os.getenv("PIPASK_LOG_LEVEL", "INFO").upper()
+pipask_log_level = getattr(logging, os.getenv("PIPASK_LOG_LEVEL", "INFO").upper(), logging.INFO)
+debug_logging = pipask_log_level < logging.INFO
 log_format = "%(name)s - %(message)s"
 logging.basicConfig(level=logging.WARNING, format=log_format, handlers=[RichHandler(console=console)])
-logging.getLogger("pipask").setLevel(getattr(logging, pipask_log_level, logging.INFO))
+logging.getLogger("pipask").setLevel(pipask_log_level)
 
 
 def main(args: list[str] | None = None) -> None:
     if args is None:
         args = sys.argv[1:]
 
-    # Parse arguments
-    # And short-circuit to pip if this is not an installation command
     try:
-        parsed_args = parse_pip_arguments(args)
-    except HandoverToPipException:
-        pip_pass_through(args)
-        return
-
-    if parsed_args.command_name != "install":
-        pip_pass_through(args)
-        return
-
-    install_args = parse_pip_install_arguments(parsed_args)
-    if install_args.help or install_args.version:
-        pip_pass_through(args)
-        return
-
-    check_results = None
-    with SimpleTaskProgress(console=console) as progress:
-        pip_report_task = progress.add_task("Resolving dependencies to install")
+        # 1. Parse arguments
+        # And short-circuit to pip if this is not an installation command
         try:
-            pip_report = get_pip_install_report_with_consent(install_args)
-            pip_report_task.update(True)
-        except Exception as e:
-            pip_report_task.update(False)
-            raise e
+            parsed_args = parse_pip_arguments(args)
+        except HandoverToPipException:
+            pip_pass_through(args)
+            return
 
-        requested_packages = [package for package in pip_report.install if package.requested]
-        if len(requested_packages) > 0:
-            check_results = asyncio.run(execute_checks(requested_packages, progress))
+        if parsed_args.command_name != "install":
+            pip_pass_through(args)
+            return
 
-    if len(requested_packages) == 0:
-        console.print("  No new packages to install\n")
-        pip_pass_through(parsed_args.raw_args)
-        return
-    elif check_results is None:
-        raise Exception("No checks were performed. Aborting.")
+        install_args = parse_pip_install_arguments(parsed_args)
+        if install_args.help or install_args.version:
+            pip_pass_through(args)
+            return
 
-    # Intentionally printing report after the progress monitor is closed
-    # to make sure the progress bars are displayed as completed
-    print_report(check_results, console)
-    if Confirm.ask("\n[green]?[/green] Would you like to continue installing package(s)?"):
-        pip_pass_through(parsed_args.raw_args)
-    else:
-        console.print("[yellow]Aborted!")
-        sys.exit(2)
+        # 2. Resolve dependencies
+        if debug_logging:
+            rich_traceback.install(show_locals=True)
+        check_results = None
+        with SimpleTaskProgress(console=console) as progress:
+            pip_report_task = progress.add_task("Resolving dependencies to install")
+            try:
+                pip_report = get_pip_install_report_with_consent(install_args)
+                pip_report_task.update(True)
+            except Exception as e:
+                pip_report_task.update(False)
+                raise e
+
+            requested_packages = [package for package in pip_report.install if package.requested]
+            if len(requested_packages) > 0:
+                check_results = asyncio.run(execute_checks(requested_packages, progress))
+
+        # 3. Decide whether to continue
+        if len(requested_packages) == 0:
+            console.print("  No new packages to install\n")
+            pip_pass_through(parsed_args.raw_args)
+            return
+        elif check_results is None:
+            console.print("  No checks were performed. Aborting.")
+            sys.exit(1)
+
+        # Intentionally printing report after the progress monitor is closed
+        # to make sure the progress bars are displayed as completed
+        print_report(check_results, console)
+        if Confirm.ask("\n[green]?[/green] Would you like to continue installing package(s)?"):
+            pip_pass_through(parsed_args.raw_args)
+        else:
+            console.print("[yellow]Aborted by user.")
+            sys.exit(2)
+    except KeyboardInterrupt:
+        console.print("\n[yellow]Aborted by user.")
 
 
 def get_pip_install_report_with_consent(args: InstallArgs) -> PipInstallReport:
     try:
+        pipask._vendor.pip._internal.utils.logging.setup_logging(
+            verbosity=1 if debug_logging else -1,
+            no_color=False,
+            user_log_file=None
+        )
         return get_pip_install_report_from_pypi(args)
     except PipAskResolutionException as e:
         message_formatted = f" ({e.message})" if e.message else ""
