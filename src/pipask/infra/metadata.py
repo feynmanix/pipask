@@ -17,6 +17,7 @@ from pipask._vendor.pip._internal.models.index import PyPI  # type: ignore
 from pipask._vendor.pip._internal.models.link import Link  # type: ignore
 from pipask._vendor.pip._internal.network.session import PipSession  # type: ignore
 from pipask._vendor.pip._internal.req import InstallRequirement  # type: ignore
+from pipask._vendor.pip._internal.req.req_install import InstallRequirement
 from pipask._vendor.pip._internal.utils.hashes import Hashes  # type: ignore
 from pipask.exception import PipaskException
 from pipask.infra.pypi import (
@@ -135,3 +136,18 @@ def fetch_metadata_from_pypi(req: InstallRequirement, pip_session: PipSession) -
         # We don't know where to fetch metadata from
         return None
 
+
+def parse_link_version(link: Link) -> Version:
+    filename = link.filename
+    if link.is_wheel:
+        try:
+            _name, version, _build, _tags = parse_wheel_filename(filename)
+            return version
+        except InvalidWheelFilename:
+            raise PipaskException("Invalid wheel filename: " + filename)
+    else:
+        try:
+            _name, version = parse_sdist_filename(filename)
+            return version
+        except InvalidSdistFilename:
+            raise PipaskException("Invalid sdist filename: " + filename)
