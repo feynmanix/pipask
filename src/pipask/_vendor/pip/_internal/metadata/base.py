@@ -25,7 +25,7 @@ from typing import (
 from packaging.requirements import Requirement
 from packaging.specifiers import InvalidSpecifier, SpecifierSet
 from packaging.utils import NormalizedName, canonicalize_name
-from packaging.version import LegacyVersion, Version
+from packaging.version import Version
 
 from pipask._vendor.pip._internal.exceptions import NoneMetadataError
 from pipask._vendor.pip._internal.locations import site_packages, user_site
@@ -46,7 +46,7 @@ if TYPE_CHECKING:
 else:
     Protocol = object
 
-DistributionVersion = Union[LegacyVersion, Version]
+DistributionVersion = Version # MODIFIED for pipask: updated for newer packaging version
 
 InfoPath = Union[str, pathlib.PurePath]
 

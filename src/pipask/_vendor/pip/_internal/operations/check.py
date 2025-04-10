@@ -5,9 +5,7 @@ import logging
 from typing import Callable, Dict, List, NamedTuple, Optional, Set, Tuple
 
 from packaging.requirements import Requirement
-from packaging.specifiers import LegacySpecifier
 from packaging.utils import NormalizedName, canonicalize_name
-from packaging.version import LegacyVersion
 
 from pipask._vendor.pip._internal.distributions import make_distribution_for_install_requirement
 from pipask._vendor.pip._internal.metadata import get_default_environment
@@ -61,7 +59,8 @@ def check_package_set(
     package name and returns a boolean.
     """
 
-    warn_legacy_versions_and_specifiers(package_set)
+    # MODIFIED for pipask: updated for newer packaging version
+    # warn_legacy_versions_and_specifiers(package_set)
 
     missing = {}
     conflicting = {}
@@ -160,34 +159,35 @@ def _create_whitelist(
     return packages_affected
 
 
-def warn_legacy_versions_and_specifiers(package_set: PackageSet) -> None:
-    for project_name, package_details in package_set.items():
-        if isinstance(package_details.version, LegacyVersion):
-            deprecated(
-                reason=(
-                    f"{project_name} {package_details.version} "
-                    f"has a non-standard version number."
-                ),
-                replacement=(
-                    f"to upgrade to a newer version of {project_name} "
-                    f"or contact the author to suggest that they "
-                    f"release a version with a conforming version number"
-                ),
-                issue=12063,
-                gone_in="24.1",
-            )
-        for dep in package_details.dependencies:
-            if any(isinstance(spec, LegacySpecifier) for spec in dep.specifier):
-                deprecated(
-                    reason=(
-                        f"{project_name} {package_details.version} "
-                        f"has a non-standard dependency specifier {dep}."
-                    ),
-                    replacement=(
-                        f"to upgrade to a newer version of {project_name} "
-                        f"or contact the author to suggest that they "
-                        f"release a version with a conforming dependency specifiers"
-                    ),
-                    issue=12063,
-                    gone_in="24.1",
-                )
+# MODIFIED for pipask: updated for newer packaging version
+# def warn_legacy_versions_and_specifiers(package_set: PackageSet) -> None:
+#     for project_name, package_details in package_set.items():
+#         if isinstance(package_details.version, LegacyVersion):
+#             deprecated(
+#                 reason=(
+#                     f"{project_name} {package_details.version} "
+#                     f"has a non-standard version number."
+#                 ),
+#                 replacement=(
+#                     f"to upgrade to a newer version of {project_name} "
+#                     f"or contact the author to suggest that they "
+#                     f"release a version with a conforming version number"
+#                 ),
+#                 issue=12063,
+#                 gone_in="24.1",
+#             )
+#         for dep in package_details.dependencies:
+#             if any(isinstance(spec, LegacySpecifier) for spec in dep.specifier):
+#                 deprecated(
+#                     reason=(
+#                         f"{project_name} {package_details.version} "
+#                         f"has a non-standard dependency specifier {dep}."
+#                     ),
+#                     replacement=(
+#                         f"to upgrade to a newer version of {project_name} "
+#                         f"or contact the author to suggest that they "
+#                         f"release a version with a conforming dependency specifiers"
+#                     ),
+#                     issue=12063,
+#                     gone_in="24.1",
+#                 )

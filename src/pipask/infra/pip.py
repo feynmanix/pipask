@@ -132,8 +132,6 @@ def get_pip_install_report_from_pypi(args: InstallArgs) -> "PipInstallReport":
             )
             for ireq in install_requirements
         ]
-    for i in install_report_items:
-        print(i.model_dump_json(indent=2))
     return PipInstallReport(version=InstallationReport([]).to_dict()["version"], install=install_report_items)
 
 
