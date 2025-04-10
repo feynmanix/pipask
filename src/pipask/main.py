@@ -5,11 +5,13 @@ import sys
 from contextlib import aclosing
 from typing import Awaitable
 
+from httpx import HTTPError
 from rich import traceback as rich_traceback
 from rich.console import Console
 from rich.logging import RichHandler
 from rich.prompt import Confirm
 
+import pipask._vendor.pip._internal.exceptions
 import pipask._vendor.pip._internal.utils.logging
 from pipask.checks.license import LicenseChecker
 from pipask.checks.package_age import PackageAge
@@ -44,6 +46,7 @@ debug_logging = pipask_log_level < logging.INFO
 log_format = "%(name)s - %(message)s"
 logging.basicConfig(level=logging.WARNING, format=log_format, handlers=[RichHandler(console=console)])
 logging.getLogger("pipask").setLevel(pipask_log_level)
+logger = logging.getLogger(__name__)
 
 
 def main(args: list[str] | None = None) -> None:
@@ -104,14 +107,22 @@ def main(args: list[str] | None = None) -> None:
             sys.exit(2)
     except KeyboardInterrupt:
         console.print("\n[yellow]Aborted by user.")
+    except (
+        pipask._vendor.pip._internal.exceptions.InstallationError,
+        pipask._vendor.pip._internal.exceptions.UninstallationError,
+        pipask._vendor.pip._internal.exceptions.BadCommand,
+        pipask._vendor.pip._internal.exceptions.NetworkConnectionError,
+        HTTPError,
+    ) as exc:
+        console.print(exc)
+        logger.debug("Exception information:", exc_info=True)
+        sys.exit(1)
 
 
 def get_pip_install_report_with_consent(args: InstallArgs) -> PipInstallReport:
     try:
         pipask._vendor.pip._internal.utils.logging.setup_logging(
-            verbosity=1 if debug_logging else -1,
-            no_color=False,
-            user_log_file=None
+            verbosity=1 if debug_logging else -1, no_color=False, user_log_file=None
         )
         return get_pip_install_report_from_pypi(args)
     except PipAskResolutionException as e:
