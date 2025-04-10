@@ -4,11 +4,16 @@ import sys
 from optparse import Values
 from pathlib import Path
 import subprocess
+import socket
+import time
+import signal
 from unittest.mock import MagicMock
 
 import pytest
 from packaging.version import Version
+from resolvelib import ResolutionImpossible
 
+from pipask._vendor.pip._internal.exceptions import InstallationError
 from pipask.cli_args import InstallArgs
 from pipask.exception import HandoverToPipException
 from pipask.infra.pip import (
@@ -108,7 +113,7 @@ def test_parse_pip_install_arguments_with_options():
     assert result.json_report_file == "-"
 
 
-# @pytest.mark.integration
+@pytest.mark.integration
 def test_install_report_simple_pypi_package(temp_venv_python):
     """Test installing a simple package from PyPI."""
     assert temp_venv_python
@@ -123,7 +128,7 @@ def test_install_report_simple_pypi_package(temp_venv_python):
     assert report == expected
 
 
-# @pytest.mark.integration
+@pytest.mark.integration
 def test_install_report_source_only_pypi_package(temp_venv_python):
     """Test installing a source only package."""
     assert temp_venv_python
@@ -137,12 +142,12 @@ def test_install_report_source_only_pypi_package(temp_venv_python):
     _assert_download_info(install_item, "https://files.pythonhosted.org", "fire-0.7.0.tar.gz")
     expected = get_pip_install_report_unsafe(args)
     for i in report.install:
-        i.metadata.classifier = []
+        i.metadata.classifier = sorted(i.metadata.classifier)
     for i in expected.install:
-        i.metadata.classifier = []
+        i.metadata.classifier = sorted(i.metadata.classifier)
     assert report == expected
 
-# @pytest.mark.integration
+@pytest.mark.integration
 def test_install_report_wheel(temp_venv_python, data_dir):
     """Test installing a wheel package from local file."""
     wheel_path = data_dir / "pyfluent_iterables-2.0.1-py3-none-any.whl"
@@ -157,7 +162,7 @@ def test_install_report_wheel(temp_venv_python, data_dir):
     assert report == expected
 
 
-# @pytest.mark.integration
+@pytest.mark.integration
 def test_install_report_sdist(data_dir, monkeypatch):
     """Test installing a source distribution package."""
     sdist_path = os.path.join(data_dir, "pyfluent_iterables-2.0.1.tar.gz")
@@ -175,7 +180,7 @@ def test_install_report_sdist(data_dir, monkeypatch):
     assert report == expected
 
 
-# @pytest.mark.integration
+@pytest.mark.integration
 @pytest.mark.parametrize("upgrade", [True, False])
 def test_install_report_respects_upgrade(temp_venv_python, upgrade, data_dir):
     subprocess.check_call(["pip", "install", "--quiet", "pyfluent-iterables==1.2.0"])
@@ -205,7 +210,7 @@ def test_install_report_respects_upgrade(temp_venv_python, upgrade, data_dir):
     assert report == expected
 
 
-# @pytest.mark.integration
+@pytest.mark.integration
 def test_install_report_from_vcs(monkeypatch):
     vcs_url = "git+https://github.com/feynmanix/pyfluent-iterables@1.2.0"
     args = _to_parsed_args(["install", vcs_url])
@@ -224,7 +229,7 @@ def test_install_report_from_vcs(monkeypatch):
 
 
 
-# @pytest.mark.integration
+@pytest.mark.integration
 def test_install_report_editable(data_dir, monkeypatch):
     package_dir = os.path.join(data_dir, "test-package")
     args = _to_parsed_args(["install", "-e", package_dir])
@@ -240,6 +245,133 @@ def test_install_report_editable(data_dir, monkeypatch):
     expected = get_pip_install_report_unsafe(args)
     assert report == expected
 
+def test_install_report_with_hashes(data_dir, tmp_path):
+    wheel_path = os.path.join(data_dir, "pyfluent_iterables-2.0.1-py3-none-any.whl")
+    import hashlib
+    with open(wheel_path, "rb") as f:
+        sha256_hash = hashlib.sha256(f.read()).hexdigest()
+    requirements_file = tmp_path / "requirements.txt"
+    with open(requirements_file, "w") as f:
+        f.write(f"{wheel_path} --hash=sha256:{sha256_hash}\n")
+
+    args = _to_parsed_args(["install", "--require-hashes", "-r", requirements_file.as_posix()])
+    report = get_pip_install_report_from_pypi(args)
+
+    assert len(report.install) == 1
+    _assert_metadata(report.install[0], "pyfluent-iterables", "2.0.1")
+    _assert_download_info(report.install[0], f"file://{wheel_path}")
+    expected = get_pip_install_report_unsafe(args)
+    assert report == expected
+
+
+def test_install_report_from_custom_index():
+    # Find a free port
+    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+        s.bind(('127.0.0.1', 0))
+        port = s.getsockname()[1]
+
+    # Start pypi-server in the background
+    server_process = subprocess.Popen([
+        'pypi-server', 'run',
+        '-p', str(port),
+        '-i', '127.0.0.1',
+        '--backend=simple-dir',
+        '/Users/jan/dev/mifeet/pipc/tests/infra/data'
+    ], start_new_session=True)
+
+    try:
+        # Give the server a moment to start
+        time.sleep(1)
+
+        args = _to_parsed_args(
+            ["install", "pyfluent-iterables", "--isolated", "--index-url", f"http://127.0.0.1:{port}/simple/", "--trusted-host", "127.0.0.1"]
+        )
+
+        report = get_pip_install_report_from_pypi(args)
+
+        assert len(report.install) >= 1
+        install_item = [i for i in report.install if i.requested][0]
+        print(install_item.metadata, install_item.download_info)
+        _assert_metadata(install_item, "pyfluent-iterables", "2.0.1")
+        _assert_download_info(install_item, f"http://127.0.0.1:{port}/packages/pyfluent_iterables-2.0.1-py3-none-any.whl")
+        expected = get_pip_install_report_unsafe(args)
+        assert report == expected
+
+    finally:
+        # Kill all processes in the session group
+        os.killpg(server_process.pid, signal.SIGTERM)
+
+
+@pytest.mark.integration
+def test_install_report_with_constraints(tmp_path):
+    constraints_path = tmp_path / "constraints.txt"
+    constraints_path.write_text("pyfluent-iterables==1.2.0\n")
+
+    args = _to_parsed_args(["install", "--isolated", "pyfluent-iterables", "-c", constraints_path.as_posix()])
+
+    report = get_pip_install_report_from_pypi(args)
+
+    assert len(report.install) >= 1
+    install_item = [i for i in report.install if i.requested][0]
+    _assert_metadata(install_item, "pyfluent-iterables", "1.2.0")
+    _assert_download_info(install_item, "https://files.pythonhosted.org", "pyfluent_iterables-1.2.0-py3-none-any.whl")
+    expected = get_pip_install_report_unsafe(args)
+    assert report == expected
+
+
+
+@pytest.mark.integration
+def test_install_report_handles_invalid_package():
+    args = _to_parsed_args(["install","--isolated", "this-package-does-not-exist-adfcegzq9"])
+
+    with pytest.raises(InstallationError) as exc_info:
+        get_pip_install_report_from_pypi(args)
+
+    assert isinstance(exc_info.value.__cause__, ResolutionImpossible)
+
+
+def test_install_report_handles_conflicting_requirements():
+    args = _to_parsed_args(["install", "--isolated", "pyfluent-iterables>2.0.0", "pyfluent-iterables<2.0.0"])
+
+    with pytest.raises(InstallationError) as exc_info:
+        get_pip_install_report_from_pypi(args)
+
+    assert isinstance(exc_info.value.__cause__, ResolutionImpossible)
+
+
+@pytest.mark.integration
+def test_install_report_multiple_packages():
+    args = _to_parsed_args(["install", "--isolated", "pyfluent-iterables==2.0.1", "fire==0.7.0"])
+
+    report = get_pip_install_report_from_pypi(args)
+
+    assert len(report.install) == 3
+    pyfluent = next(i for i in report.install if i.metadata.name == "pyfluent-iterables")
+    fire = next(i for i in report.install if i.metadata.name == "fire")
+    termcolor = next(i for i in report.install if i.metadata.name == "termcolor")
+    _assert_metadata(pyfluent, "pyfluent-iterables", "2.0.1")
+    _assert_metadata(fire, "fire", "0.7.0")
+    assert pyfluent.requested
+    assert fire.requested
+    assert not termcolor.requested
+    expected = get_pip_install_report_unsafe(args)
+    for i in report.install:
+        i.metadata.classifier = sorted(i.metadata.classifier)
+    for i in expected.install:
+        i.metadata.classifier = sorted(i.metadata.classifier)
+    assert report == expected
+
+@pytest.mark.integration
+def test_install_report_with_extras():
+    args = _to_parsed_args(["install", "--isolated", "requests[socks]==2.32.3"])
+
+    report = get_pip_install_report_from_pypi(args)
+
+    assert len(report.install) >= 1
+    pysocks = next(i for i in report.install if i.metadata.name == "PySocks")
+    assert pysocks
+    expected = get_pip_install_report_unsafe(args)
+    assert report == expected
 
 
 def _to_parsed_args(args: list[str]) -> InstallArgs:

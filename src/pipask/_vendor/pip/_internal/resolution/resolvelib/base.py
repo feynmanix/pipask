@@ -2,14 +2,14 @@ from typing import FrozenSet, Iterable, Optional, Tuple, Union
 
 from packaging.specifiers import SpecifierSet
 from packaging.utils import NormalizedName
-from packaging.version import LegacyVersion, Version
+from packaging.version import Version
 
 from pipask._vendor.pip._internal.models.link import Link, links_equivalent
 from pipask._vendor.pip._internal.req.req_install import InstallRequirement
 from pipask._vendor.pip._internal.utils.hashes import Hashes
 
 CandidateLookup = Tuple[Optional["Candidate"], Optional[InstallRequirement]]
-CandidateVersion = Union[LegacyVersion, Version]
+CandidateVersion = Version # MODIFIED for pipask: updated for newer packaging version
 
 
 def format_name(project: NormalizedName, extras: FrozenSet[NormalizedName]) -> str:
