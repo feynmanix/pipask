@@ -1,14 +1,32 @@
+import os
 from optparse import Values
+from pathlib import Path
+import subprocess
+import tempfile
+import shutil
 
 import pytest
 
 from pipask.cli_args import InstallArgs
 from pipask.exception import HandoverToPipException
 from pipask.infra.pip import (
+    InstallationReportItem,
     get_pip_install_report_unsafe,
     parse_pip_arguments,
     parse_pip_install_arguments,
+    get_pip_install_report_from_pypi,
+    PipInstallReport,
 )
+from tests.conftest import with_venv_python
+
+temp_venv_python = pytest.fixture(scope="module")(with_venv_python)
+
+
+@pytest.fixture
+def data_dir():
+    """Return the path to the test data directory."""
+    current_dir = os.path.dirname(os.path.abspath(__file__))
+    return Path(current_dir) / "data"
 
 
 @pytest.mark.integration
@@ -86,3 +104,59 @@ def test_parse_pip_install_arguments_with_options():
     assert result.version
     assert result.dry_run
     assert result.json_report_file == "-"
+
+
+# @pytest.mark.integration
+def test_install_report_simple_pypi_package(temp_venv_python):
+    """Test installing a simple package from PyPI."""
+    assert temp_venv_python
+    args = _to_parsed_args(["install", "--isolated", "pyfluent-iterables==2.0.1"])
+
+    report = get_pip_install_report_from_pypi(args)
+
+    assert len(report.install) == 1
+    _assert_metadata(report.install[0], "pyfluent-iterables", "2.0.1")
+    _assert_download_info(report.install[0], "https://files.pythonhosted.org", "pyfluent_iterables-2.0.1-py3-none-any.whl")
+    expected = get_pip_install_report_unsafe(args)
+    assert report == expected
+
+
+# @pytest.mark.integration
+def test_install_report_source_only_pypi_package(temp_venv_python):
+    """Test installing a source only package."""
+    assert temp_venv_python
+    args = _to_parsed_args(["install", "--isolated", "fire==0.7.0"])
+
+    report = get_pip_install_report_from_pypi(args)
+
+    assert len(report.install) >= 1
+    install_item = [i for i in report.install if i.requested][0]
+    _assert_metadata(install_item, "fire", "0.7.0")
+    _assert_download_info(install_item, "https://files.pythonhosted.org", "fire-0.7.0.tar.gz")
+    expected = get_pip_install_report_unsafe(args)
+    for i in report.install:
+        i.metadata.classifier = []
+    for i in expected.install:
+        i.metadata.classifier = []
+    assert report == expected
+
+
+def _to_parsed_args(args: list[str]) -> InstallArgs:
+    parsed_args = parse_pip_arguments(args)
+    assert parsed_args.command_name == "install"
+    return parse_pip_install_arguments(parsed_args)
+
+
+def _assert_metadata(install_item: InstallationReportItem, expected_name: str, expected_version: str):
+    assert install_item.metadata.name == expected_name
+    assert install_item.metadata.version == expected_version
+
+
+def _assert_download_info(
+    install_item: InstallationReportItem, expected_url_prefix: str, expected_url_suffix: str | None = None
+):
+    assert install_item.download_info is not None
+    assert install_item.download_info.url.startswith(expected_url_prefix)
+    if expected_url_suffix is None:
+        expected_url_suffix = expected_url_prefix
+    assert install_item.download_info.url.endswith(expected_url_suffix)
