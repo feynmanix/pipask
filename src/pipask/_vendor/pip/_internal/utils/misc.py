@@ -63,7 +63,7 @@ __all__ = [
     "ConfiguredBuildBackendHookCaller",
 ]
 
-from pipask.exception import PipaskException
+from pipask.code_execution_guard import PackageCodeExecutionGuard
 
 logger = logging.getLogger(__name__)
 
@@ -717,11 +717,12 @@ class ConfiguredBuildBackendHookCaller(BuildBackendHookCaller):
         metadata_directory: Optional[str] = None,
     ) -> str:
         # MODIFIED for pipask
-        raise PipaskException("Pipask should not need to call any hooks")
-        # cs = self.config_holder.config_settings
-        # return super().build_wheel(
-        #     wheel_directory, config_settings=cs, metadata_directory=metadata_directory
-        # )
+        package_name = self.config_holder.req.name if self.config_holder.req is not None else None
+        PackageCodeExecutionGuard.check_execution_allowed(package_name, None)
+        cs = self.config_holder.config_settings
+        return super().build_wheel(
+            wheel_directory, config_settings=cs, metadata_directory=metadata_directory
+        )
 
     def build_sdist(
         self,
@@ -729,9 +730,10 @@ class ConfiguredBuildBackendHookCaller(BuildBackendHookCaller):
         config_settings: Optional[Dict[str, Union[str, List[str]]]] = None,
     ) -> str:
         # MODIFIED for pipask
-        raise PipaskException("Pipask should not need to call any hooks")
-        # cs = self.config_holder.config_settings
-        # return super().build_sdist(sdist_directory, config_settings=cs)
+        package_name = self.config_holder.req.name if self.config_holder.req is not None else None
+        PackageCodeExecutionGuard.check_execution_allowed(package_name, None)
+        cs = self.config_holder.config_settings
+        return super().build_sdist(sdist_directory, config_settings=cs)
 
     def build_editable(
         self,
@@ -740,35 +742,39 @@ class ConfiguredBuildBackendHookCaller(BuildBackendHookCaller):
         metadata_directory: Optional[str] = None,
     ) -> str:
         # MODIFIED for pipask
-        raise PipaskException("Pipask should not need to call any hooks")
-        # cs = self.config_holder.config_settings
-        # return super().build_editable(
-        #     wheel_directory, config_settings=cs, metadata_directory=metadata_directory
-        # )
+        package_name = self.config_holder.req.name if self.config_holder.req is not None else None
+        PackageCodeExecutionGuard.check_execution_allowed(package_name, None)
+        cs = self.config_holder.config_settings
+        return super().build_editable(
+            wheel_directory, config_settings=cs, metadata_directory=metadata_directory
+        )
 
     def get_requires_for_build_wheel(
         self, config_settings: Optional[Dict[str, Union[str, List[str]]]] = None
     ) -> List[str]:
         # MODIFIED for pipask
-        raise PipaskException("Pipask should not need to call any hooks")
-        # cs = self.config_holder.config_settings
-        # return super().get_requires_for_build_wheel(config_settings=cs)
+        package_name = self.config_holder.req.name if self.config_holder.req is not None else None
+        PackageCodeExecutionGuard.check_execution_allowed(package_name, None)
+        cs = self.config_holder.config_settings
+        return super().get_requires_for_build_wheel(config_settings=cs)
 
     def get_requires_for_build_sdist(
         self, config_settings: Optional[Dict[str, Union[str, List[str]]]] = None
     ) -> List[str]:
         # MODIFIED for pipask
-        raise PipaskException("Pipask should not need to call any hooks")
-        # cs = self.config_holder.config_settings
-        # return super().get_requires_for_build_sdist(config_settings=cs)
+        package_name = self.config_holder.req.name if self.config_holder.req is not None else None
+        PackageCodeExecutionGuard.check_execution_allowed(package_name, None)
+        cs = self.config_holder.config_settings
+        return super().get_requires_for_build_sdist(config_settings=cs)
 
     def get_requires_for_build_editable(
         self, config_settings: Optional[Dict[str, Union[str, List[str]]]] = None
     ) -> List[str]:
         # MODIFIED for pipask
-        raise PipaskException("Pipask should not need to call any hooks")
-        # cs = self.config_holder.config_settings
-        # return super().get_requires_for_build_editable(config_settings=cs)
+        package_name = self.config_holder.req.name if self.config_holder.req is not None else None
+        PackageCodeExecutionGuard.check_execution_allowed(package_name, None)
+        cs = self.config_holder.config_settings
+        return super().get_requires_for_build_editable(config_settings=cs)
 
     def prepare_metadata_for_build_wheel(
         self,
@@ -777,13 +783,14 @@ class ConfiguredBuildBackendHookCaller(BuildBackendHookCaller):
         _allow_fallback: bool = True,
     ) -> str:
         # MODIFIED for pipask
-        raise PipaskException("Pipask should not need to call any hooks")
-        # cs = self.config_holder.config_settings
-        # return super().prepare_metadata_for_build_wheel(
-        #     metadata_directory=metadata_directory,
-        #     config_settings=cs,
-        #     _allow_fallback=_allow_fallback,
-        # )
+        package_name = self.config_holder.req.name if self.config_holder.req is not None else None
+        PackageCodeExecutionGuard.check_execution_allowed(package_name, None)
+        cs = self.config_holder.config_settings
+        return super().prepare_metadata_for_build_wheel(
+            metadata_directory=metadata_directory,
+            config_settings=cs,
+            _allow_fallback=_allow_fallback,
+        )
 
     def prepare_metadata_for_build_editable(
         self,
@@ -792,10 +799,11 @@ class ConfiguredBuildBackendHookCaller(BuildBackendHookCaller):
         _allow_fallback: bool = True,
     ) -> str:
         # MODIFIED for pipask
-        raise PipaskException("Pipask should not need to call any hooks")
-        # cs = self.config_holder.config_settings
-        # return super().prepare_metadata_for_build_editable(
-        #     metadata_directory=metadata_directory,
-        #     config_settings=cs,
-        #     _allow_fallback=_allow_fallback,
-        # )
+        package_name = self.config_holder.req.name if self.config_holder.req is not None else None
+        PackageCodeExecutionGuard.check_execution_allowed(package_name, None)
+        cs = self.config_holder.config_settings
+        return super().prepare_metadata_for_build_editable(
+            metadata_directory=metadata_directory,
+            config_settings=cs,
+            _allow_fallback=_allow_fallback,
+        )

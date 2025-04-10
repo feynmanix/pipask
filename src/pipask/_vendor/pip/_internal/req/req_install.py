@@ -17,8 +17,7 @@ from packaging.version import Version
 from packaging.version import parse as parse_version
 from pyproject_hooks import BuildBackendHookCaller
 
-# MODIFIED for pipask: should not be needed
-# from pipask._vendor.pip._internal.build_env import BuildEnvironment, NoOpBuildEnvironment
+from pipask._vendor.pip._internal.build_env import BuildEnvironment, NoOpBuildEnvironment
 from pipask._vendor.pip._internal.exceptions import InstallationError, PreviousBuildDirError
 from pipask._vendor.pip._internal.locations import get_scheme
 from pipask._vendor.pip._internal.metadata import (
@@ -30,12 +29,12 @@ from pipask._vendor.pip._internal.metadata import (
 from pipask._vendor.pip._internal.metadata.base import FilesystemWheel
 from pipask._vendor.pip._internal.models.direct_url import DirectUrl
 from pipask._vendor.pip._internal.models.link import Link
-# MODIFIED for pipask: should not be needed
-# from pipask._vendor.pip._internal.operations.build.metadata import generate_metadata
-# from pipask._vendor.pip._internal.operations.build.metadata_editable import generate_editable_metadata
-# from pipask._vendor.pip._internal.operations.build.metadata_legacy import (
-#     generate_metadata as generate_metadata_legacy,
-# )
+from pipask._vendor.pip._internal.operations.build.metadata import generate_metadata
+from pipask._vendor.pip._internal.operations.build.metadata_editable import generate_editable_metadata
+from pipask._vendor.pip._internal.operations.build.metadata_legacy import (
+    generate_metadata as generate_metadata_legacy,
+)
+# MODIFIED for pipask: not needed
 # from pipask._vendor.pip._internal.operations.install.editable_legacy import (
 #     install_editable as install_editable_legacy,
 # )
@@ -60,6 +59,7 @@ from pipask._vendor.pip._internal.utils.temp_dir import TempDirectory, tempdir_k
 from pipask._vendor.pip._internal.utils.unpacking import unpack_file
 from pipask._vendor.pip._internal.utils.virtualenv import running_under_virtualenv
 from pipask._vendor.pip._internal.vcs import vcs
+from pipask.code_execution_guard import PackageCodeExecutionGuard
 from pipask.exception import PipaskException
 
 logger = logging.getLogger(__name__)
@@ -163,8 +163,7 @@ class InstallRequirement:
         self.user_supplied = user_supplied
 
         self.isolated = isolated
-        # MODIFIED for pipask: should not be needed
-        # self.build_env: BuildEnvironment = NoOpBuildEnvironment()
+        self.build_env: BuildEnvironment = NoOpBuildEnvironment()
 
         # For PEP 517, the directory where we request the project metadata
         # gets stored. We need this to pass to build_wheel, so the backend
@@ -255,15 +254,18 @@ class InstallRequirement:
     def supports_pyproject_editable(self) -> bool:
         if not self.use_pep517:
             return False
+
         # MODIFIED for pipask
-        # assert self.pep517_backend
-        raise PipaskException("Pipask should not call package hooks")
-        # with self.build_env:
-        #     runner = runner_with_spinner_message(
-        #         "Checking if build backend supports build_editable"
-        #     )
-        #     with self.pep517_backend.subprocess_runner(runner):
-        #         return "build_editable" in self.pep517_backend._supported_features()
+        source = self.link.url if self.link else None
+        PackageCodeExecutionGuard.check_execution_allowed(self.name, source)
+
+        assert self.pep517_backend
+        with self.build_env:
+            runner = runner_with_spinner_message(
+                "Checking if build backend supports build_editable"
+            )
+            with self.pep517_backend.subprocess_runner(runner):
+                return "build_editable" in self.pep517_backend._supported_features()
 
     @property
     def specifier(self) -> SpecifierSet:
@@ -570,44 +572,46 @@ class InstallRequirement:
         Under legacy processing, call setup.py egg-info.
         """
         # MODIFIED for pipask: should not be needed
-        raise PipaskException("Pipask should not need to build any wheels")
-        # assert self.source_dir, f"No source dir for {self}"
-        # details = self.name or f"from {self.link}"
-        #
-        # if self.use_pep517:
-        #     assert self.pep517_backend is not None
-        #     if (
-        #         self.editable
-        #         and self.permit_editable_wheels
-        #         and self.supports_pyproject_editable()
-        #     ):
-        #         self.metadata_directory = generate_editable_metadata(
-        #             build_env=self.build_env,
-        #             backend=self.pep517_backend,
-        #             details=details,
-        #         )
-        #     else:
-        #         self.metadata_directory = generate_metadata(
-        #             build_env=self.build_env,
-        #             backend=self.pep517_backend,
-        #             details=details,
-        #         )
-        # else:
-        #     self.metadata_directory = generate_metadata_legacy(
-        #         build_env=self.build_env,
-        #         setup_py_path=self.setup_py_path,
-        #         source_dir=self.unpacked_source_directory,
-        #         isolated=self.isolated,
-        #         details=details,
-        #     )
-        #
-        # # Act on the newly generated metadata, based on the name and version.
-        # if not self.name:
-        #     self._set_requirement()
-        # else:
-        #     self.warn_on_mismatching_name()
-        #
-        # self.assert_source_matches_version()
+        source = self.link.url if self.link else None
+        PackageCodeExecutionGuard.check_execution_allowed(self.name, source)
+
+        assert self.source_dir, f"No source dir for {self}"
+        details = self.name or f"from {self.link}"
+
+        if self.use_pep517:
+            assert self.pep517_backend is not None
+            if (
+                self.editable
+                and self.permit_editable_wheels
+                and self.supports_pyproject_editable()
+            ):
+                self.metadata_directory = generate_editable_metadata(
+                    build_env=self.build_env,
+                    backend=self.pep517_backend,
+                    details=details,
+                )
+            else:
+                self.metadata_directory = generate_metadata(
+                    build_env=self.build_env,
+                    backend=self.pep517_backend,
+                    details=details,
+                )
+        else:
+            self.metadata_directory = generate_metadata_legacy(
+                build_env=self.build_env,
+                setup_py_path=self.setup_py_path,
+                source_dir=self.unpacked_source_directory,
+                isolated=self.isolated,
+                details=details,
+            )
+
+        # Act on the newly generated metadata, based on the name and version.
+        if not self.name:
+            self._set_requirement()
+        else:
+            self.warn_on_mismatching_name()
+
+        self.assert_source_matches_version()
 
     @property
     def metadata(self) -> Any:

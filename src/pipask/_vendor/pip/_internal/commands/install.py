@@ -47,8 +47,6 @@ from pipask._vendor.pip._internal.utils.virtualenv import (
 # MODIFIED for pipask: should not be needed
 # from pipask._vendor.pip._internal.wheel_builder import build, should_build_for_install_command
 
-from pipask.exception import PipaskException
-
 logger = getLogger(__name__)
 
 
