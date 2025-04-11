@@ -114,7 +114,7 @@ def _find_release_by_hash(
 def fetch_metadata_from_pypi(req: InstallRequirement, pip_session: PipSession) -> BaseDistribution | None:
     if req.link is None:
         return None
-    if req.link.is_vcs: # We cannot parse name and version from VCS links
+    if req.link.is_vcs:  # We cannot parse name and version from VCS links
         return None
     parsed_name, parsed_version = _name_and_version_from_link(req.link)
     if parsed_name != req.name or not req.name:

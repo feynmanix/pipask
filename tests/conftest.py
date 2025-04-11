@@ -19,7 +19,7 @@ def pytest_addoption(parser):
     parser.addoption("--integration", action="store_true", default=False, help="run integration tests")
 
 
-def with_venv_python(tmp_path_factory:TempPathFactory):
+def with_venv_python(tmp_path_factory: TempPathFactory):
     # Create virtual environment
     venv_path = tmp_path_factory.mktemp("venv")
     env_builder = venv.EnvBuilder(with_pip=True, system_site_packages=False)

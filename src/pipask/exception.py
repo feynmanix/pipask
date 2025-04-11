@@ -16,5 +16,6 @@ class PipAskResolutionException(PipaskException):
 
 class PipAskCodeExecutionDeniedException(PipAskResolutionException):
     """Exception raised when we are not allowed execute 3rd party code in a package"""
-    def __init__(self, message:str):
+
+    def __init__(self, message: str):
         super().__init__(message)
