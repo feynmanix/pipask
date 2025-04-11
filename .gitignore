@@ -131,3 +131,6 @@ dmypy.json
 # Other
 *.iml
 .idea/
+
+# Project specific:
+!src/pipask/_vendor/pip/_internal/operations/build
