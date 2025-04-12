@@ -2,6 +2,8 @@ import sys
 import textwrap
 from typing import List, Optional, Sequence
 
+from pipask.infra.sys_values import get_pip_sys_values
+
 # Shim to wrap setup.py invocation with setuptools
 # Note that __file__ is handled via two {!r} *and* %r, to ensure that paths on
 # Windows are correctly handled (it should be "C:\\Users" not "C:\Users").
@@ -61,7 +63,7 @@ def make_setuptools_shim_args(
     :param unbuffered_output: If True, adds the unbuffered switch to the
      argument list.
     """
-    args = [sys.executable]
+    args = [get_pip_sys_values().executable]  # MODIFIED for pipask
     if unbuffered_output:
         args += ["-u"]
     args += ["-c", _SETUPTOOLS_SHIM.format(setup_py_path)]

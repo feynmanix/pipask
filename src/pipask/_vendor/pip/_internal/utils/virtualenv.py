@@ -5,6 +5,8 @@ import site
 import sys
 from typing import List, Optional
 
+from pipask.infra.sys_values import get_pip_sys_values
+
 logger = logging.getLogger(__name__)
 _INCLUDE_SYSTEM_SITE_PACKAGES_REGEX = re.compile(
     r"include-system-site-packages\s*=\s*(?P<value>true|false)"
@@ -16,7 +18,7 @@ def _running_under_venv() -> bool:
 
     This handles PEP 405 compliant virtual environments.
     """
-    return sys.prefix != getattr(sys, "base_prefix", sys.prefix)
+    return get_pip_sys_values().prefix != get_pip_sys_values().base_prefix  # MODIFIED for pipask
 
 
 def _running_under_legacy_virtualenv() -> bool:
@@ -25,7 +27,7 @@ def _running_under_legacy_virtualenv() -> bool:
     This handles virtual environments created with pypa's virtualenv.
     """
     # pypa/virtualenv case
-    return hasattr(sys, "real_prefix")
+    return get_pip_sys_values().has_real_prefix  # MODIFIED for pipask
 
 
 def running_under_virtualenv() -> bool:
@@ -38,7 +40,7 @@ def _get_pyvenv_cfg_lines() -> Optional[List[str]]:
 
     Returns None, if it could not read/access the file.
     """
-    pyvenv_cfg_file = os.path.join(sys.prefix, "pyvenv.cfg")
+    pyvenv_cfg_file = os.path.join(get_pip_sys_values().prefix, "pyvenv.cfg")  # MODIFIED for pipask
     try:
         # Although PEP 405 does not specify, the built-in venv module always
         # writes with UTF-8. (pypa/pip#8717)
@@ -83,7 +85,7 @@ def _no_global_under_legacy_virtualenv() -> bool:
     This mirrors logic in pypa/virtualenv for determining whether system
     site-packages are visible in the virtual environment.
     """
-    site_mod_dir = os.path.dirname(os.path.abspath(site.__file__))
+    site_mod_dir = os.path.dirname(os.path.abspath(get_pip_sys_values().site_file))  # MODIFIED for pipask
     no_global_site_packages_file = os.path.join(
         site_mod_dir,
         "no-global-site-packages.txt",

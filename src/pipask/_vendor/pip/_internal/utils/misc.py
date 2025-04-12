@@ -64,6 +64,7 @@ __all__ = [
 ]
 
 from pipask.code_execution_guard import PackageCodeExecutionGuard
+from pipask.infra.sys_values import get_pip_sys_values
 
 logger = logging.getLogger(__name__)
 
@@ -76,7 +77,7 @@ OnErr = Callable[[FunctionType, Path, ExcInfo], Any]
 
 
 def get_pip_version() -> str:
-    pip_pkg_dir = os.path.join(os.path.dirname(__file__), "..", "..")
+    pip_pkg_dir = get_pip_sys_values().pip_pkg_dir  # MODIFIED for pipask
     pip_pkg_dir = os.path.abspath(pip_pkg_dir)
 
     return f"pip {__version__} from {pip_pkg_dir} (python {get_major_minor_version()})"
@@ -115,7 +116,7 @@ def get_prog() -> str:
     try:
         prog = os.path.basename(sys.argv[0])
         if prog in ("__main__.py", "-c"):
-            return f"{sys.executable} -m pip"
+            return f"{get_pip_sys_values().executable} -m pip"  # MODIFIED for pipask
         else:
             return prog
     except (AttributeError, TypeError, IndexError):
@@ -378,7 +379,7 @@ def is_local(path: str) -> bool:
     """
     if not running_under_virtualenv():
         return True
-    return path.startswith(normalize_path(sys.prefix))
+    return path.startswith(normalize_path(get_pip_sys_values().prefix))  # MODIFIED for pipask
 
 
 def write_output(msg: Any, *args: Any) -> None:
@@ -620,8 +621,8 @@ def protect_pip_from_modification_on_windows(modifying_pip: bool) -> None:
     """
     pip_names = [
         "pip",
-        f"pip{sys.version_info.major}",
-        f"pip{sys.version_info.major}.{sys.version_info.minor}",
+        f"pip{get_pip_sys_values().version_info[0]}",  # MODIFIED for pipask
+        f"pip{get_pip_sys_values().version_info[0]}.{get_pip_sys_values().version_info[1]}",  # MODIFIED for pipask
     ]
 
     # See https://github.com/pypa/pip/issues/1299 for more discussion
@@ -630,7 +631,7 @@ def protect_pip_from_modification_on_windows(modifying_pip: bool) -> None:
     )
 
     if should_show_use_python_msg:
-        new_command = [sys.executable, "-m", "pip"] + sys.argv[1:]
+        new_command = [get_pip_sys_values().executable, "-m", "pip"] + sys.argv[1:]  # MODIFIED for pipask
         raise CommandError(
             "To modify pip, please run the following command:\n{}".format(
                 " ".join(new_command)

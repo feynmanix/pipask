@@ -10,6 +10,7 @@ from pipask._vendor.pip._internal.models.scheme import SCHEME_KEYS, Scheme
 from pipask._vendor.pip._internal.utils.compat import WINDOWS
 from pipask._vendor.pip._internal.utils.deprecation import deprecated
 from pipask._vendor.pip._internal.utils.virtualenv import running_under_virtualenv
+from pipask.infra.sys_values import get_pip_sys_values
 
 from . import _sysconfig
 from .base import (
@@ -175,8 +176,8 @@ def _looks_like_msys2_mingw_scheme() -> bool:
 
 
 def _fix_abiflags(parts: Tuple[str]) -> Generator[str, None, None]:
-    ldversion = sysconfig.get_config_var("LDVERSION")
-    abiflags = getattr(sys, "abiflags", None)
+    ldversion = get_pip_sys_values().ldversion # MODIFIED for pipask
+    abiflags = get_pip_sys_values().abiflags # MODIFIED for pipask
 
     # LDVERSION does not end with sys.abiflags. Just return the path unchanged.
     if not ldversion or not abiflags or not ldversion.endswith(abiflags):

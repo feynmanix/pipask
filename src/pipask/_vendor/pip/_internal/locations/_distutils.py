@@ -1,4 +1,5 @@
 """Locations where we look for configs, install stuff, etc"""
+from pipask.infra.sys_values import get_pip_sys_values
 
 # The following comment should be removed at some point in the future.
 # mypy: strict-optional=False
@@ -150,7 +151,7 @@ def get_scheme(
 def get_bin_prefix() -> str:
     # XXX: In old virtualenv versions, sys.prefix can contain '..' components,
     # so we need to call normpath to eliminate them.
-    prefix = os.path.normpath(sys.prefix)
+    prefix = os.path.normpath(get_pip_sys_values().prefix) # MODIFIED for pipask
     if WINDOWS:
         bin_py = os.path.join(prefix, "Scripts")
         # buildout uses 'bin' on Windows too?

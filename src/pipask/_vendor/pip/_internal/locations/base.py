@@ -8,6 +8,7 @@ import typing
 from pipask._vendor.pip._internal.exceptions import InstallationError
 from pipask._vendor.pip._internal.utils import appdirs
 from pipask._vendor.pip._internal.utils.virtualenv import running_under_virtualenv
+from pipask.infra.sys_values import get_pip_sys_values
 
 # Application Directories
 USER_CACHE_DIR = appdirs.user_cache_dir("pip")
@@ -54,7 +55,7 @@ def change_root(new_root: str, pathname: str) -> str:
 
 def get_src_prefix() -> str:
     if running_under_virtualenv():
-        src_prefix = os.path.join(sys.prefix, "src")
+        src_prefix = os.path.join(get_pip_sys_values().prefix, "src")  # MODIFIED for pipask
     else:
         # FIXME: keep src in cwd for now (it is not a temporary folder)
         try:
