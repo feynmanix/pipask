@@ -1,9 +1,13 @@
 import json
 import os
+import shutil
 import signal
 import socket
 import subprocess
+from contextlib import contextmanager
+
 import sys
+import tarfile
 import time
 from optparse import Values
 from pathlib import Path
@@ -308,7 +312,6 @@ def test_install_report_from_custom_index():
 
         assert len(report.install) >= 1
         install_item = [i for i in report.install if i.requested][0]
-        print(install_item.metadata, install_item.download_info)
         _assert_metadata(install_item, "pyfluent-iterables", "2.0.1")
         _assert_download_info(
             install_item, f"http://127.0.0.1:{port}/packages/pyfluent_iterables-2.0.1-py3-none-any.whl"
@@ -316,10 +319,61 @@ def test_install_report_from_custom_index():
         expected = get_pip_install_report_unsafe(args)
         _assert_same_reports(report, expected)
 
-    finally:
-        # Kill all processes in the session group
-        os.killpg(server_process.pid, signal.SIGTERM)
 
+@pytest.mark.integration
+def test_install_reports_looks_up_pypi_metadata_only_when_hash_matches(tmp_path, monkeypatch, data_dir):
+@pytest.mark.parametrize("change_hash", [True, False])
+def test_install_reports_looks_up_pypi_metadata_only_when_hash_matches(tmp_path, monkeypatch, data_dir, change_hash):
+    source_dist = data_dir / "pyfluent_iterables-2.0.1.tar.gz"
+    package_dir = tmp_path / "package_dir"
+    package_dir.mkdir()
+
+    if change_hash:
+        # Extract the source distribution and modify it so that the hash no longer matches pypi metadata
+        with tarfile.open(source_dist, "r:gz") as tar:
+            tar.extractall(tmp_path)
+        extracted_dir = tmp_path / "pyfluent_iterables-2.0.1"
+        (extracted_dir / "new_file.txt").write_text("file that changes the package hash")
+
+        # Recompress
+        new_tar = package_dir / "pyfluent_iterables-2.0.1.tar.gz"
+        with tarfile.open(new_tar, "w:gz") as tar:
+            tar.add(extracted_dir, arcname=extracted_dir.name)
+    else:
+        # Use the original source distribution with the same hash as it has in PyPI
+        shutil.copy(source_dist, package_dir / "pyfluent_iterables-2.0.1.tar.gz")
+    
+    # Serve the (modified) package
+    with _start_pypi_server(package_dir) as port:
+        args = _to_parsed_args(
+            [
+                "install",
+                "pyfluent-iterables",
+                "--isolated",
+                "--index-url",
+                f"http://127.0.0.1:{port}/simple/",
+                "--trusted-host",
+                "127.0.0.1",
+            ]
+        )
+
+        mock_guard = MagicMock()
+        monkeypatch.setattr(PackageCodeExecutionGuard, "check_execution_allowed", mock_guard)
+
+        report = get_pip_install_report_from_pypi(args)
+
+        if change_hash:
+            # Expect execution guard call because the match did NOT match,
+            # and therefore we need to build the source distribution to get metadata
+            mock_guard.assert_any_call("pyfluent-iterables", f"http://127.0.0.1:{port}/packages/pyfluent_iterables-2.0.1.tar.gz")
+        else:
+            # Not called because we fetched the metadata from PyPI
+            mock_guard.assert_not_called()
+
+        assert len(report.install) == 1
+        _assert_metadata(report.install[0], "pyfluent-iterables", "2.0.1")
+        expected = get_pip_install_report_unsafe(args)
+        _assert_same_reports(report, expected)
 
 @pytest.mark.integration
 def test_install_report_with_constraints(tmp_path):
@@ -450,3 +504,33 @@ def _get_sys_path_from_env(python_executable: str):
     ]
     subprocess_output = subprocess.check_output([python_executable, "-c", "\n".join(python_lines)])
     return json.loads(subprocess_output)
+
+def _get_free_port():
+    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+        s.bind(("127.0.0.1", 0))
+        return s.getsockname()[1]
+
+@contextmanager
+def _start_pypi_server(package_dir: str | Path):
+    port = _get_free_port()
+    server_process = subprocess.Popen(
+        [
+            "pypi-server",
+            "run",
+            "-p",
+            str(port),
+            "-i",
+            "127.0.0.1",
+            "--backend=simple-dir",
+            str(package_dir),
+        ],
+        start_new_session=True,
+    )
+    try:
+        # Give the server a moment to start
+        time.sleep(1)
+        yield port
+    finally:
+        # Kill all processes in the session group
+        os.killpg(server_process.pid, signal.SIGTERM)
+        server_process.wait()

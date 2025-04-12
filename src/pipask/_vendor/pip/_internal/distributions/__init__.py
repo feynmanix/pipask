@@ -1,7 +1,5 @@
 from typing import Optional
 
-from packaging.utils import canonicalize_name
-
 from pipask._vendor.pip._internal.distributions.base import AbstractDistribution
 from pipask._vendor.pip._internal.distributions.sdist import SourceDistribution
 from pipask._vendor.pip._internal.distributions.wheel import WheelDistribution
@@ -9,7 +7,9 @@ from pipask._vendor.pip._internal.index.package_finder import PackageFinder
 from pipask._vendor.pip._internal.metadata import BaseDistribution
 from pipask._vendor.pip._internal.network.session import PipSession
 from pipask._vendor.pip._internal.req.req_install import InstallRequirement
-from pipask.infra.metadata import get_pypi_metadata_distribution, parse_link_version
+from pipask.infra.metadata import (
+    fetch_metadata_from_pypi_is_available,
+)
 
 
 def make_distribution_for_install_requirement(
@@ -45,13 +45,7 @@ class VirtualMetadataOnlyDistribution(AbstractDistribution):
     @classmethod
     def create_if_metadata_available(cls, req: InstallRequirement, session: PipSession) -> Optional["VirtualMetadataOnlyDistribution"]:
         """Create a distribution if metadata is available"""
-        if not req.name or not req.link:
-            return None
-        if req.link.is_file or req.link.is_vcs:
-            return None
-        name = canonicalize_name(req.name)
-        version = parse_link_version(req.link)
-        metadata_distribution = get_pypi_metadata_distribution(name, version, session)
+        metadata_distribution = fetch_metadata_from_pypi_is_available(req, session)
         if metadata_distribution is None:
             return None
         return cls(req, metadata_distribution)

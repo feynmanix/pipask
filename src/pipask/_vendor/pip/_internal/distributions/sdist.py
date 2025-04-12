@@ -35,7 +35,10 @@ class SourceDistribution(AbstractDistribution):
         check_build_deps: bool,
     ) -> None:
         # MODIFIED for pipask
-        PackageCodeExecutionGuard.check_execution_allowed(self.req.name, self.req.link.url if self.req.link else None)
+        PackageCodeExecutionGuard.check_execution_allowed(
+            self.req.name,
+            self.req.link.url_without_fragment if self.req.link else None
+        )
 
         # Load pyproject.toml, to determine whether PEP 517 is to be used
         self.req.load_pyproject_toml()

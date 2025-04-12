@@ -62,7 +62,8 @@ def synthesize_release_metadata_file(release_info: ReleaseResponse) -> str:
     return "\n".join(lines)
 
 
-def get_pypi_metadata_distribution(
+# Making this private to avoid inadvertent use without checking that the hash or URL matches PyPI index
+def _get_pypi_metadata_distribution(
     canonical_name: str,
     version: Version,
     pip_session: PipSession,
@@ -111,17 +112,18 @@ def _find_release_by_hash(
     return None, None
 
 
-def fetch_metadata_from_pypi(req: InstallRequirement, pip_session: PipSession) -> BaseDistribution | None:
-    if req.link is None:
+def fetch_metadata_from_pypi_is_available(req: InstallRequirement, pip_session: PipSession) -> BaseDistribution | None:
+    if req.link is None or req.name is None:
         return None
     if req.link.is_vcs:  # We cannot parse name and version from VCS links
         return None
+    req_name = canonicalize_name(req.name)
     parsed_name, parsed_version = _name_and_version_from_link(req.link)
-    if parsed_name != req.name or not req.name:
-        logger.warning(f"Mismatch of requirement name '{req.name}' and remote file name {req.link.url}")
+    if canonicalize_name(parsed_name) != req_name:
+        logger.warning(f"Mismatch of requirement name '{req_name}' and remote file name {req.link.url_without_fragment}")
         return None
     if _is_from_pypi(req.link):
-        return get_pypi_metadata_distribution(canonicalize_name(req.name), parsed_version, pip_session)
+        return _get_pypi_metadata_distribution(req_name, parsed_version, pip_session)
     elif req.link.has_hash:
         # If the requirement does not appear to be from PyPI directly
         # it can originate from a proxy that serves files originating from PyPI.
@@ -132,23 +134,12 @@ def fetch_metadata_from_pypi(req: InstallRequirement, pip_session: PipSession) -
             return None
         version, file = _find_release_by_hash(project_info.releases, req.link.as_hashes())
         if version is not None:
-            return get_pypi_metadata_distribution(canonicalize_name(req.name), Version(version), pip_session)
+            return _get_pypi_metadata_distribution(canonicalize_name(req.name), Version(version), pip_session)
     else:
-        # We don't know where to fetch metadata from
+        # Not a pypi link, and no hashes to check againsg
+        # -> we can't be sure if we would be fetching the correct metadata
         return None
 
 
 def parse_link_version(link: Link) -> Version:
-    filename = link.filename
-    if link.is_wheel:
-        try:
-            _name, version, _build, _tags = parse_wheel_filename(filename)
-            return version
-        except InvalidWheelFilename:
-            raise PipaskException("Invalid wheel filename: " + filename)
-    else:
-        try:
-            _name, version = parse_sdist_filename(filename)
-            return version
-        except InvalidSdistFilename:
-            raise PipaskException("Invalid sdist filename: " + filename)
+    return _name_and_version_from_link(link)[1]

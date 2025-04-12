@@ -14,8 +14,8 @@ from pipask._vendor.pip._internal.network.session import PipSession
 from pipask._vendor.pip._internal.req import InstallRequirement
 from pipask._vendor.pip._internal.utils.temp_dir import global_tempdir_manager
 from pipask.infra.metadata import (
-    fetch_metadata_from_pypi,
-    get_pypi_metadata_distribution,
+    fetch_metadata_from_pypi_is_available,
+    _get_pypi_metadata_distribution,
     synthesize_release_metadata_file,
 )
 from pipask.infra.pypi import ReleaseResponse
@@ -146,7 +146,7 @@ def test_creates_distribution_from_pypi_metadata_importlib(
     # See pip._internal.metadata.__init__._should_use_importlib_metadata()
     with patch.dict(os.environ, {"_PIP_USE_IMPORTLIB_METADATA": "1" if use_importlib_metadata else "0"}):
         with global_tempdir_manager():
-            distribution = get_pypi_metadata_distribution("pyfluent-iterables", Version("1.2.0"), pip_session)
+            distribution = _get_pypi_metadata_distribution("pyfluent-iterables", Version("1.2.0"), pip_session)
 
             assert distribution.canonical_name == "pyfluent-iterables"
             assert distribution.version == Version("1.2.0")
@@ -159,7 +159,7 @@ def test_get_pypi_metadata_distribution_throws_if_tempdir_not_provided(pip_sessi
     # See pip._internal.metadata.__init__._should_use_importlib_metadata()
     with patch.dict(os.environ, {"_PIP_USE_IMPORTLIB_METADATA": "1"}):
         with pytest.raises(RuntimeError):
-            get_pypi_metadata_distribution("pyfluent-iterables", Version("1.2.0"), pip_session)
+            _get_pypi_metadata_distribution("pyfluent-iterables", Version("1.2.0"), pip_session)
 
 
 @pytest.mark.integration
@@ -178,7 +178,7 @@ async def test_fetches_metadata_from_pypi_by_hash(pip_session: PipSession) -> No
 
     with patch.dict(os.environ, {"_PIP_USE_IMPORTLIB_METADATA": "1"}):
         with global_tempdir_manager():
-            metadata = fetch_metadata_from_pypi(ireq, pip_session)
+            metadata = fetch_metadata_from_pypi_is_available(ireq, pip_session)
 
             assert metadata is not None
             assert metadata.canonical_name == "pyfluent-iterables"
