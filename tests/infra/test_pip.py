@@ -155,6 +155,7 @@ def test_install_report_source_only_pypi_package(temp_venv_python):
 @pytest.mark.integration
 def test_install_report_wheel(temp_venv_python, data_dir):
     """Test installing a wheel package from local file."""
+    assert temp_venv_python
     wheel_path = data_dir / "pyfluent_iterables-2.0.1-py3-none-any.whl"
     args = _to_parsed_args(["install", str(wheel_path)])
 
@@ -168,8 +169,9 @@ def test_install_report_wheel(temp_venv_python, data_dir):
 
 
 @pytest.mark.integration
-def test_install_report_sdist(data_dir, monkeypatch):
+def test_install_report_sdist(temp_venv_python, data_dir, monkeypatch):
     """Test installing a source distribution package."""
+    assert temp_venv_python
     sdist_path = os.path.join(data_dir, "pyfluent_iterables-2.0.1.tar.gz")
     args = _to_parsed_args(["install", sdist_path])
     mock_guard = MagicMock()
@@ -216,7 +218,8 @@ def test_install_report_respects_upgrade(temp_venv_python_isolated, upgrade, dat
 
 
 @pytest.mark.integration
-def test_install_report_from_vcs(monkeypatch):
+def test_install_report_from_vcs(temp_venv_python, monkeypatch):
+    assert temp_venv_python
     vcs_url = "git+https://github.com/feynmanix/pyfluent-iterables@1.2.0"
     args = _to_parsed_args(["install", vcs_url])
 
@@ -244,9 +247,17 @@ def test_install_report_editable(temp_venv_python, data_dir, monkeypatch):
     report = get_pip_install_report_from_pypi(args)
 
     mock_guard.assert_any_call(None, f"file://{package_dir}")
-    assert len(report.install) == 1
-    _assert_metadata(report.install[0], "test-package", "0.1.0")
-    _assert_download_info(report.install[0], f"file://{package_dir}")
+    assert len(report.install) == 2
+
+    test_package = next(i for i in report.install if i.metadata.name == "test-package")
+    assert test_package.metadata.version == "0.1.0"
+    assert test_package.requested
+    _assert_download_info(test_package, f"file://{package_dir}")
+
+    dependency_package = next(i for i in report.install if i.metadata.name == "pyfluent-iterables")
+    assert Version(dependency_package.metadata.version) >= Version("2.0.0")
+    assert not dependency_package.requested
+
     expected = get_pip_install_report_unsafe(args)
     _assert_same_reports(report, expected)
 
@@ -271,31 +282,25 @@ def test_install_report_with_hashes(data_dir, tmp_path):
     _assert_same_reports(report, expected)
 
 
-def test_install_report_from_custom_index():
-    # Find a free port
-    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
-        s.bind(("127.0.0.1", 0))
-        port = s.getsockname()[1]
+def test_install_reports_respects_env_vars(temp_venv_python, monkeypatch, tmp_path, data_dir):
+    assert temp_venv_python
+    requirement_file = tmp_path / "requirements.txt"
+    requirement_file.write_text((data_dir / "pyfluent_iterables-2.0.1-py3-none-any.whl").as_posix())
+    monkeypatch.setenv("PIP_REQUIREMENT", requirement_file.as_posix())
+    monkeypatch.setenv("PIP_ISOLATED", "1")
 
-    # Start pypi-server in the background
-    server_process = subprocess.Popen(
-        [
-            "pypi-server",
-            "run",
-            "-p",
-            str(port),
-            "-i",
-            "127.0.0.1",
-            "--backend=simple-dir",
-            "/Users/jan/dev/mifeet/pipc/tests/infra/data",
-        ],
-        start_new_session=True,
-    )
+    args = _to_parsed_args(["install"])
+    report = get_pip_install_report_from_pypi(args)
 
-    try:
-        # Give the server a moment to start
-        time.sleep(1)
+    assert len(report.install) == 1
+    _assert_metadata(report.install[0], "pyfluent-iterables", "2.0.1")
+    expected = get_pip_install_report_unsafe(args)
+    _assert_same_reports(report, expected)
 
+
+def test_install_report_from_custom_index(temp_venv_python, data_dir):
+    assert temp_venv_python
+    with _start_pypi_server(data_dir) as port:
         args = _to_parsed_args(
             [
                 "install",
@@ -321,9 +326,9 @@ def test_install_report_from_custom_index():
 
 
 @pytest.mark.integration
-def test_install_reports_looks_up_pypi_metadata_only_when_hash_matches(tmp_path, monkeypatch, data_dir):
 @pytest.mark.parametrize("change_hash", [True, False])
-def test_install_reports_looks_up_pypi_metadata_only_when_hash_matches(tmp_path, monkeypatch, data_dir, change_hash):
+def test_install_reports_looks_up_pypi_metadata_only_when_hash_matches(tmp_path, monkeypatch, data_dir, change_hash, temp_venv_python):
+    assert temp_venv_python
     source_dist = data_dir / "pyfluent_iterables-2.0.1.tar.gz"
     package_dir = tmp_path / "package_dir"
     package_dir.mkdir()
@@ -342,7 +347,7 @@ def test_install_reports_looks_up_pypi_metadata_only_when_hash_matches(tmp_path,
     else:
         # Use the original source distribution with the same hash as it has in PyPI
         shutil.copy(source_dist, package_dir / "pyfluent_iterables-2.0.1.tar.gz")
-    
+
     # Serve the (modified) package
     with _start_pypi_server(package_dir) as port:
         args = _to_parsed_args(
@@ -376,7 +381,8 @@ def test_install_reports_looks_up_pypi_metadata_only_when_hash_matches(tmp_path,
         _assert_same_reports(report, expected)
 
 @pytest.mark.integration
-def test_install_report_with_constraints(tmp_path):
+def test_install_report_with_constraints(tmp_path, temp_venv_python):
+    assert temp_venv_python
     constraints_path = tmp_path / "constraints.txt"
     constraints_path.write_text("pyfluent-iterables==1.2.0\n")
 
@@ -412,7 +418,8 @@ def test_install_report_handles_conflicting_requirements():
 
 
 @pytest.mark.integration
-def test_install_report_multiple_packages():
+def test_install_report_multiple_packages(temp_venv_python):
+    assert temp_venv_python
     args = _to_parsed_args(["install", "--isolated", "pyfluent-iterables==2.0.1", "fire==0.7.0"])
 
     report = get_pip_install_report_from_pypi(args)
@@ -445,7 +452,8 @@ def test_install_report_with_extras(temp_venv_python):
 
 
 @pytest.mark.integration
-def test_install_report_with_no_deps():
+def test_install_report_with_no_deps(temp_venv_python):
+    assert temp_venv_python
     args = _to_parsed_args(["install", "--isolated", "--no-deps", "black==25.1.0"])
 
     report = get_pip_install_report_from_pypi(args)
@@ -456,9 +464,21 @@ def test_install_report_with_no_deps():
     _assert_same_reports(report, expected)
 
 
-# @pytest.mark.integration
-def test_install_report_complex_requirement():
-    args = _to_parsed_args(["install", "--isolated", "torch==2.6.0"])
+@pytest.mark.integration
+def test_install_report_complex_requirement(temp_venv_python):
+    assert temp_venv_python
+    args = _to_parsed_args(
+        [
+            "install",
+            "--isolated",
+            "torch==2.6.0",
+            "matplotlib==3.10.1",
+            "h5py==3.13.0",
+            "psycopg[binary]==3.2.6",
+            "fastapi[all]",
+            "pandas[test]",
+        ]
+    )
 
     report = get_pip_install_report_from_pypi(args)
 
@@ -489,6 +509,8 @@ def _assert_download_info(
 
 
 def _assert_same_reports(actual_report: PipInstallReport, expected_report: PipInstallReport):
+    actual_report.install = sorted(actual_report.install, key=lambda i: i.metadata.name)
+    expected_report.install = sorted(expected_report.install, key=lambda i: i.metadata.name)
     for i in actual_report.install:
         i.metadata.classifier = sorted(i.metadata.classifier)
     for i in expected_report.install:

@@ -7,5 +7,5 @@ setup(
     author="Test Author",
     author_email="test@example.com",
     py_modules=["test_module"],
-    install_requires=["requests>=2.25.0"],
+    install_requires=["pyfluent-iterables>=2.0.0"],
 )

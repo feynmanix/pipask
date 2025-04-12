@@ -1,10 +1,20 @@
 import os
 import venv
+from pathlib import Path
 from unittest.mock import patch
 
 import pytest
 from _pytest.tmpdir import TempPathFactory
 
+from pipask._vendor.pip._internal.locations import get_bin_prefix
+from pipask.infra.executables import get_pip_python_executable
+from pipask.infra.sys_values import get_pip_sys_values
+
+
+@pytest.fixture(autouse=True, scope="function")
+def clear_venv_dependent_caches():
+    get_pip_python_executable.cache_clear()
+    get_pip_sys_values.cache_clear()
 
 def pytest_collection_modifyitems(config, items):
     run_integration = config.getoption("--integration") or config.getoption("-m") == "integration"
@@ -28,6 +38,8 @@ def with_venv_python(tmp_path_factory: TempPathFactory):
     venv_python: str = venv_ctx.env_exe
 
     # "Activate" the virtual environment
-    path_env_var = str(venv_path / "bin") + os.pathsep + os.environ["PATH"]
+    platform_scripts_dir = Path(get_bin_prefix()).name
+    path_env_var = str(venv_path / platform_scripts_dir) + os.pathsep + os.environ["PATH"]
     with patch.dict(os.environ, {"PATH": path_env_var, "VIRTUAL_ENV": str(venv_path)}):
+        os.environ.pop("PYTHONHOME", None)
         yield venv_python
