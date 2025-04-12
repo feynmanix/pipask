@@ -120,7 +120,9 @@ def fetch_metadata_from_pypi_is_available(req: InstallRequirement, pip_session: 
     req_name = canonicalize_name(req.name)
     parsed_name, parsed_version = _name_and_version_from_link(req.link)
     if canonicalize_name(parsed_name) != req_name:
-        logger.warning(f"Mismatch of requirement name '{req_name}' and remote file name {req.link.url_without_fragment}")
+        logger.warning(
+            f"Mismatch of requirement name '{req_name}' and remote file name {req.link.url_without_fragment}"
+        )
         return None
     if _is_from_pypi(req.link):
         return _get_pypi_metadata_distribution(req_name, parsed_version, pip_session)
