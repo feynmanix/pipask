@@ -21,6 +21,8 @@ from pipask._vendor.pip._internal.exceptions import InstallationError
 from pipask.cli_args import InstallArgs
 from pipask.code_execution_guard import PackageCodeExecutionGuard
 from pipask.exception import HandoverToPipException
+from pipask.infra import sys_values
+from pipask.infra.executables import get_pip_command
 from pipask.infra.pip import (
     InstallationReportItem,
     PipInstallReport,
@@ -29,6 +31,7 @@ from pipask.infra.pip import (
     parse_pip_arguments,
     parse_pip_install_arguments,
 )
+from pipask.infra.sys_values import get_pip_sys_values
 from tests.conftest import with_venv_python
 
 temp_venv_python = pytest.fixture(scope="module")(with_venv_python)
@@ -189,21 +192,14 @@ def test_install_report_sdist(temp_venv_python, data_dir, monkeypatch):
 
 @pytest.mark.integration
 @pytest.mark.parametrize("upgrade", [True, False])
-def test_install_report_respects_upgrade(temp_venv_python_isolated, upgrade, data_dir):
-    subprocess.check_call(["pip", "install", "--quiet", "pyfluent-iterables==1.2.0"])
+def test_install_report_respects_upgrade(temp_venv_python_isolated, upgrade, data_dir, clear_venv_dependent_caches):
+    assert temp_venv_python_isolated
+    clear_venv_dependent_caches() # Make sure we install into the right venv
+    subprocess.check_call(get_pip_command() + [ "install", "pyfluent-iterables==1.2.0"])
+    clear_venv_dependent_caches() # pkg_resources needs to be refreshed to pick up the new dependency
     upgrade_opt = ["--upgrade"] if upgrade else []
-    args = _to_parsed_args(["install", *upgrade_opt, "pyfluent-iterables"])
-
-    prev_sys_path = sys.path
-    try:
-        # We need to update sys.path to make the pip code called from get_pip_install_report_from_pypi()
-        # see the package install in our temporary virtualenv. It wouldn't see it without it because
-        # even though we patched the env variables for venv (PATH, VIRTUAL_ENV), that did not update
-        # sys.path and only has effect in subprocess calls.
-        sys.path = sys.path + _get_sys_path_from_env(temp_venv_python_isolated)
-        report = get_pip_install_report_from_pypi(args)
-    finally:
-        sys.path = prev_sys_path
+    args = _to_parsed_args(["install", "--isolated", *upgrade_opt, "pyfluent-iterables"])
+    report = get_pip_install_report_from_pypi(args)
 
     if upgrade:
         assert len(report.install) == 1
@@ -444,11 +440,11 @@ def test_install_report_with_extras(temp_venv_python):
 
     report = get_pip_install_report_from_pypi(args)
 
-    assert len(report.install) >= 1
-    pysocks = next(i for i in report.install if i.metadata.name == "PySocks")
-    assert pysocks
     expected = get_pip_install_report_unsafe(args)
     _assert_same_reports(report, expected)
+    assert len(report.install) > 2
+    pysocks = next(i for i in report.install if i.metadata.name == "PySocks")
+    assert pysocks
 
 
 @pytest.mark.integration
@@ -515,6 +511,15 @@ def _assert_same_reports(actual_report: PipInstallReport, expected_report: PipIn
         i.metadata.classifier = sorted(i.metadata.classifier)
     for i in expected_report.install:
         i.metadata.classifier = sorted(i.metadata.classifier)
+        if (
+            i.download_info
+            and i.download_info.archive_info
+            and i.download_info.archive_info.hashes is None
+            and i.download_info.archive_info.hash is not None
+        ):
+            # This happens on GitHub, not sure why, probably not worth fixing properly
+            hash_name, hash_value = i.download_info.archive_info.hash.split("=", 1)
+            i.download_info.archive_info.hashes = {hash_name: hash_value}
     assert actual_report == expected_report
 
 

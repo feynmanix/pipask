@@ -43,6 +43,8 @@ import posixpath
 import importlib
 from pkgutil import get_importer
 
+from pipask.infra.sys_values import get_pip_sys_values
+
 try:
     import _imp
 except ImportError:
@@ -85,11 +87,11 @@ from pipask._vendor.pip._internal.utils._jaraco_text import (
 import platformdirs
 import packaging
 
-__import__('pip._vendor.packaging.version')
-__import__('pip._vendor.packaging.specifiers')
-__import__('pip._vendor.packaging.requirements')
-__import__('pip._vendor.packaging.markers')
-__import__('pip._vendor.packaging.utils')
+__import__('packaging.version')
+__import__('packaging.specifiers')
+__import__('packaging.requirements')
+__import__('packaging.markers')
+__import__('packaging.utils')
 
 if sys.version_info < (3, 5):
     raise RuntimeError("Python 3.5 or later is required")
@@ -376,7 +378,7 @@ class UnknownExtra(ResolutionError):
 
 _provider_factories = {}
 
-PY_MAJOR = '{}.{}'.format(*sys.version_info)
+PY_MAJOR = '{}.{}'.format(*get_pip_sys_values().version_info)  # MODIFIED for pipask
 EGG_DIST = 3
 BINARY_DIST = 2
 SOURCE_DIST = 1
@@ -609,7 +611,7 @@ class WorkingSet:
         self.callbacks = []
 
         if entries is None:
-            entries = sys.path
+            entries = get_pip_sys_values().path  # MODIFIED for pipask
 
         for entry in entries:
             self.add_entry(entry)
@@ -648,12 +650,12 @@ class WorkingSet:
             ws.add(dist)
 
         # add any missing entries from sys.path
-        for entry in sys.path:
+        for entry in get_pip_sys_values().path:  # MODIFIED for pipask
             if entry not in ws.entries:
                 ws.add_entry(entry)
 
         # then copy back to sys.path
-        sys.path[:] = ws.entries
+        get_pip_sys_values().path[:] = ws.entries # MODIFIED for pipask
         return ws
 
     def add_entry(self, entry):
@@ -1082,7 +1084,7 @@ class Environment:
         the platform/python version defined at initialization are added.
         """
         if search_path is None:
-            search_path = sys.path
+            search_path = get_pip_sys_values().path  # MODIFIED for pipask
 
         for item in search_path:
             for dist in find_distributions(item):
@@ -2297,7 +2299,7 @@ def _rebuild_mod_path(orig_path, package_name, module):
     Rebuild module.__path__ ensuring that all entries are ordered
     corresponding to their sys.path order
     """
-    sys_path = [_normalize_cached(p) for p in sys.path]
+    sys_path = [_normalize_cached(p) for p in get_pip_sys_values().path]  # MODIFIED for pipask
 
     def safe_sys_path_index(entry):
         """
@@ -2343,7 +2345,7 @@ def declare_namespace(packageName):
         if packageName in _namespace_packages:
             return
 
-        path = sys.path
+        path = get_pip_sys_values().path  # MODIFIED for pipask
         parent, _, _ = packageName.rpartition('.')
 
         if parent:
@@ -2862,9 +2864,9 @@ class Distribution:
     def activate(self, path=None, replace=False):
         """Ensure distribution is importable on `path` (default=sys.path)"""
         if path is None:
-            path = sys.path
+            path = get_pip_sys_values().path  # MODIFIED for pipask
         self.insert_on(path, replace=replace)
-        if path is sys.path:
+        if path is get_pip_sys_values().path:  # MODIFIED for pipask
             fixup_namespace_packages(self.location)
             for pkg in self._get_metadata('namespace_packages.txt'):
                 if pkg in sys.modules:
@@ -2988,13 +2990,13 @@ class Distribution:
                 # UNLESS it's already been added to sys.path and replace=False
                 if (not replace) and nloc in npath[p:]:
                     return
-                if path is sys.path:
+                if path is get_pip_sys_values().path:  # MODIFIED for pipask
                     self.check_version_conflict()
                 path.insert(p, loc)
                 npath.insert(p, nloc)
                 break
         else:
-            if path is sys.path:
+            if path is sys.get_pip_sys_values().path:  # MODIFIED for pipask
                 self.check_version_conflict()
             if replace:
                 path.insert(0, loc)
@@ -3357,5 +3359,5 @@ def _initialize_master_working_set():
     )
     working_set.entries = []
     # match order
-    list(map(working_set.add_entry, sys.path))
+    list(map(working_set.add_entry, get_pip_sys_values().path))  # MODIFIED for pipask
     globals().update(locals())

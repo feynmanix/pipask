@@ -1,3 +1,4 @@
+import importlib
 import os
 import venv
 from pathlib import Path
@@ -7,14 +8,20 @@ import pytest
 from _pytest.tmpdir import TempPathFactory
 
 from pipask._vendor.pip._internal.locations import get_bin_prefix
+from pipask._vendor.pip._vendor import pkg_resources
 from pipask.infra.executables import get_pip_python_executable
 from pipask.infra.sys_values import get_pip_sys_values
 
 
 @pytest.fixture(autouse=True, scope="function")
 def clear_venv_dependent_caches():
-    get_pip_python_executable.cache_clear()
-    get_pip_sys_values.cache_clear()
+    def _clear():
+        get_pip_python_executable.cache_clear()
+        get_pip_sys_values.cache_clear()
+        importlib.reload(pkg_resources)
+    _clear()
+    return _clear # Return in case the test needs to call it again
+
 
 def pytest_collection_modifyitems(config, items):
     run_integration = config.getoption("--integration") or config.getoption("-m") == "integration"

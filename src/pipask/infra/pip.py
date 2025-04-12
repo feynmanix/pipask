@@ -130,6 +130,7 @@ def get_pip_install_report_unsafe(parsed_args: InstallArgs) -> "PipInstallReport
     """
     Get pip install report by directly invoking pip.
     This is unsafe because it may execute 3rd party code (setup.py or PEP 517 hooks) for source distributions.
+    On the other hand, it guarantees the resolved versions will be the same as the ones to be installed later.
     """
     pip_args = (
         get_pip_command() + parsed_args.raw_args + ["--dry-run", "--quiet", "--report", "-"]
@@ -172,8 +173,8 @@ class InstallationReportItem(BaseModel):
     metadata: InstallationReportItemMetadata
     download_info: InstallationReportItemDownloadInfo | None
     requested: bool
-    is_yanked: bool
     is_direct: bool
+    is_yanked: bool = False
 
     @property
     def pinned_requirement(self) -> str:
