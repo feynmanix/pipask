@@ -1,6 +1,7 @@
 import json
-import os
 import subprocess
+from functools import cache
+
 import sys
 import time
 from typing import Optional, Sequence
@@ -23,19 +24,31 @@ from pipask.exception import HandoverToPipException, PipaskException
 
 logger = pipask._vendor.pip._internal.utils.logging.getLogger(__name__)
 
+_fallback_python_command = "python3"
 
-def _get_pip_command() -> list[str]:
-    # Use the currently activated python so that the installation is executed into the activated environment
-    venv_path = os.getenv("VIRTUAL_ENV")
-    if venv_path:
-        python_path = os.path.join(venv_path, "bin", "python")
-        return [python_path, "-m", "pip"]
-    else:
+
+@cache
+def get_pip_python_executable() -> str:
+    # We can't use sys.executable because it may be a different python than the one we are using
+    # pip debug is not guaranteed to be stable, but hopefully this won't change
+    pip_debug_output = subprocess.run(["pip", "debug"], check=True, text=True, capture_output=True)
+    executable_line = next(line for line in pip_debug_output.stdout.splitlines() if line.startswith("sys.executable:"))
+    if not executable_line:
+        # Could happen if pip debug output changes?
+        logger.warning("Could not reliably determine python executable")
+        return _fallback_python_command
+    return executable_line[len("sys.executable:"):].strip()
+
+
+def get_pip_command() -> list[str]:
+    python_executable = get_pip_python_executable()
+    if python_executable == _fallback_python_command:
         return ["pip"]
+    return [python_executable, "-m", "pip"]
 
 
 def pip_pass_through(args: list[str]) -> None:
-    pip_args = _get_pip_command() + args
+    pip_args = get_pip_command() + args
     logger.debug(f"Running subprocess: {' '.join(pip_args)}")
     start_time = time.time()
     try:
@@ -141,7 +154,7 @@ def get_pip_install_report_unsafe(parsed_args: InstallArgs) -> "PipInstallReport
     This is unsafe because it may execute 3rd party code (setup.py or PEP 517 hooks) for source distributions.
     """
     pip_args = (
-        _get_pip_command() + parsed_args.raw_args + ["--dry-run", "--quiet", "--report", "-"]
+        get_pip_command() + parsed_args.raw_args + ["--dry-run", "--quiet", "--report", "-"]
         # Would be nice to use --no-deps to speed up the resolution, but that may give versions
         # different from will actually be installed
     )
