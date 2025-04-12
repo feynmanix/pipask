@@ -20,6 +20,7 @@ from pipask._vendor.pip._internal.req.constructors import (
 from pipask._vendor.pip._internal.req.req_install import InstallRequirement
 from pipask._vendor.pip._internal.utils.direct_url_helpers import direct_url_from_link
 from pipask._vendor.pip._internal.utils.misc import normalize_version_info
+from pipask.infra.sys_values import get_pip_sys_values
 
 from .base import Candidate, CandidateVersion, Requirement, format_name
 
@@ -565,7 +566,7 @@ class RequiresPythonCandidate(Candidate):
         if py_version_info is not None:
             version_info = normalize_version_info(py_version_info)
         else:
-            version_info = sys.version_info[:3]
+            version_info = get_pip_sys_values().version_info  # MODIFIED for pipask
         self._version = Version(".".join(str(c) for c in version_info))
 
     # We don't need to implement __eq__() and __ne__() since there is always

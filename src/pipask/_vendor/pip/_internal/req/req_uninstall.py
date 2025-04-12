@@ -15,6 +15,7 @@ from pipask._vendor.pip._internal.utils.misc import ask, normalize_path, renames
 from pipask._vendor.pip._internal.utils.temp_dir import AdjacentTempDirectory, TempDirectory
 from pipask._vendor.pip._internal.utils.virtualenv import running_under_virtualenv
 from pipask.exception import PipaskException
+from pipask.infra.sys_values import get_pip_sys_values
 
 logger = getLogger(__name__)
 
@@ -327,7 +328,7 @@ class UninstallPathSet:
         # aka is_local, but caching normalized sys.prefix
         if not running_under_virtualenv():
             return True
-        return path.startswith(self._normalize_path_cached(sys.prefix))
+        return path.startswith(self._normalize_path_cached(get_pip_sys_values().prefix))  # MODIFIED for pipask
 
     def add(self, path: str) -> None:
         head, tail = os.path.split(path)
@@ -449,7 +450,7 @@ class UninstallPathSet:
                 "Not uninstalling %s at %s, outside environment %s",
                 dist.canonical_name,
                 normalized_dist_location,
-                sys.prefix,
+                get_pip_sys_values().prefix,  # MODIFIED for pipask
             )
             return cls(dist)
 

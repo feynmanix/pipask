@@ -49,6 +49,7 @@ from pipask._vendor.pip._internal.utils.direct_url_helpers import direct_url_fro
 from pipask._vendor.pip._internal.utils.logging import indent_log
 from pipask._vendor.pip._internal.utils.misc import normalize_version_info
 from pipask._vendor.pip._internal.utils.packaging import check_requires_python
+from pipask.infra.sys_values import get_pip_sys_values
 
 logger = logging.getLogger(__name__)
 
@@ -135,7 +136,7 @@ class Resolver(BaseResolver):
         assert upgrade_strategy in self._allowed_strategies
 
         if py_version_info is None:
-            py_version_info = sys.version_info[:3]
+            py_version_info = get_pip_sys_values().version_info  # MODIFIED for pipask
         else:
             py_version_info = normalize_version_info(py_version_info)
 

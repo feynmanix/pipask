@@ -25,6 +25,7 @@ from pipask._vendor.pip._internal.utils import appdirs
 from pipask._vendor.pip._internal.utils.compat import WINDOWS
 from pipask._vendor.pip._internal.utils.logging import getLogger
 from pipask._vendor.pip._internal.utils.misc import ensure_dir, enum
+from pipask.infra.sys_values import get_pip_sys_values
 
 RawConfigParser = configparser.RawConfigParser  # Shorthand
 Kind = NewType("Kind", str)
@@ -70,7 +71,7 @@ def get_configuration_files() -> Dict[Kind, List[str]]:
         os.path.join(path, CONFIG_BASENAME) for path in appdirs.site_config_dirs("pip")
     ]
 
-    site_config_file = os.path.join(sys.prefix, CONFIG_BASENAME)
+    site_config_file = os.path.join(get_pip_sys_values().prefix, CONFIG_BASENAME)  # MODIFIED for pipask
     legacy_config_file = os.path.join(
         os.path.expanduser("~"),
         "pip" if WINDOWS else ".pip",

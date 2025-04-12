@@ -15,12 +15,12 @@ from certifi import where
 from packaging.requirements import Requirement
 from packaging.version import Version
 
-from pip import __file__ as pip_location
 from pipask._vendor.pip._internal.cli.spinners import open_spinner
 from pipask._vendor.pip._internal.locations import get_platlib, get_purelib, get_scheme
 from pipask._vendor.pip._internal.metadata import get_default_environment, get_environment
 from pipask._vendor.pip._internal.utils.subprocess import call_subprocess
 from pipask._vendor.pip._internal.utils.temp_dir import TempDirectory, tempdir_kinds
+from pipask.infra.sys_values import get_pip_sys_values
 
 if TYPE_CHECKING:
     from pip._internal.index.package_finder import PackageFinder
@@ -47,7 +47,7 @@ def get_runnable_pip() -> str:
     This is used to run a pip subprocess, for installing requirements into the build
     environment.
     """
-    source = pathlib.Path(pip_location).resolve().parent
+    source = pathlib.Path(get_pip_sys_values().pip_pkg_dir).resolve()  # MODIFIED for pipask
 
     if not source.is_dir():
         # This would happen if someone is using pip from inside a zip file. In that
@@ -232,7 +232,7 @@ class BuildEnvironment:
         kind: str,
     ) -> None:
         args: List[str] = [
-            sys.executable,
+            get_pip_sys_values().executable,  # MODIFIED for pipask
             pip_runnable,
             "install",
             "--ignore-installed",

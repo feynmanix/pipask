@@ -14,6 +14,7 @@ from pipask._vendor.pip._internal.metadata.base import BaseDistribution, BaseEnv
 from pipask._vendor.pip._internal.models.wheel import Wheel
 from pipask._vendor.pip._internal.utils.deprecation import deprecated
 from pipask._vendor.pip._internal.utils.filetypes import WHEEL_EXTENSION
+from pipask.infra.sys_values import get_pip_sys_values
 
 from ._compat import BadMetadata, BasePath, get_dist_name, get_info_location
 from ._dists import Distribution
@@ -162,12 +163,12 @@ class Environment(BaseEnvironment):
 
     @classmethod
     def default(cls) -> BaseEnvironment:
-        return cls(sys.path)
+        return cls(get_pip_sys_values().path)  # MODIFIED for pipask
 
     @classmethod
     def from_paths(cls, paths: Optional[List[str]]) -> BaseEnvironment:
         if paths is None:
-            return cls(sys.path)
+            return cls(get_pip_sys_values().path)  # MODIFIED for pipask
         return cls(paths)
 
     def _iter_distributions(self) -> Iterator[BaseDistribution]:

@@ -7,6 +7,7 @@ import typing
 from pipask._vendor.pip._internal.exceptions import InvalidSchemeCombination, UserInstallationInvalid
 from pipask._vendor.pip._internal.models.scheme import SCHEME_KEYS, Scheme
 from pipask._vendor.pip._internal.utils.virtualenv import running_under_virtualenv
+from pipask.infra.sys_values import get_pip_sys_values
 
 from .base import change_root, get_major_minor_version, is_osx_framework
 
@@ -70,7 +71,7 @@ def _infer_prefix() -> str:
         return _PREFERRED_SCHEME_API("prefix")
     if _should_use_osx_framework_prefix():
         return "osx_framework_library"
-    implementation_suffixed = f"{sys.implementation.name}_{os.name}"
+    implementation_suffixed = f"{get_pip_sys_values().implementation_name}_{os.name}"  # MODIFIED for pipask
     if implementation_suffixed in _AVAILABLE_SCHEMES:
         return implementation_suffixed
     if sys.implementation.name in _AVAILABLE_SCHEMES:
@@ -176,9 +177,9 @@ def get_scheme(
     #    pip's historical header path logic (see point 1) did not do this.
     if running_under_virtualenv():
         if user:
-            base = variables.get("userbase", sys.prefix)
+            base = variables.get("userbase", get_pip_sys_values().prefix)  # MODIFIED for pipask
         else:
-            base = variables.get("base", sys.prefix)
+            base = variables.get("base", get_pip_sys_values().prefix)  # MODIFIED for pipask
         python_xy = f"python{get_major_minor_version()}"
         paths["include"] = os.path.join(base, "include", "site", python_xy)
     elif not dist_name:
