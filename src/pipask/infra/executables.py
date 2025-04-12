@@ -1,3 +1,4 @@
+import shutil
 import subprocess
 from functools import cache
 import logging
@@ -7,7 +8,7 @@ logger = logging.getLogger(__name__)
 _fallback_python_command = "python3"
 
 
-@cache
+@cache # This is cleared between tests
 def get_pip_python_executable() -> str:
     # We can't use sys.executable because it may be a different python than the one we are using
     # pip debug is not guaranteed to be stable, but hopefully this won't change
@@ -23,5 +24,5 @@ def get_pip_python_executable() -> str:
 def get_pip_command() -> list[str]:
     python_executable = get_pip_python_executable()
     if python_executable == _fallback_python_command:
-        return ["pip"]
+        return [shutil.which("pip")]
     return [python_executable, "-m", "pip"]
