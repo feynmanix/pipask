@@ -37,7 +37,7 @@ def get_pip_python_executable() -> str:
         # Could happen if pip debug output changes?
         logger.warning("Could not reliably determine python executable")
         return _fallback_python_command
-    return executable_line[len("sys.executable:"):].strip()
+    return executable_line[len("sys.executable:") :].strip()
 
 
 def get_pip_command() -> list[str]:
