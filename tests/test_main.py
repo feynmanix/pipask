@@ -4,9 +4,6 @@ from unittest.mock import patch
 import pytest
 
 from pipask.main import main
-from tests.conftest import with_venv_python
-
-temp_venv_python = pytest.fixture()(with_venv_python)
 
 
 @pytest.mark.integration

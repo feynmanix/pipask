@@ -23,7 +23,7 @@ class SysValues:
     site_file: str
 
 
-@cache # This is cleared between tests
+@cache  # This is cleared between tests
 def get_pip_sys_values() -> SysValues:
     """
     Returns various sys values as they are in the *target* environment.
