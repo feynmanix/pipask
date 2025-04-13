@@ -142,8 +142,10 @@ def get_pip_install_report_unsafe(parsed_args: InstallArgs) -> "PipInstallReport
     start_time = time.time()
     try:
         env_copy = os.environ.copy()
-        env_copy["PYTHONIOENCODING"] = "utf-8"
-        result = subprocess.run(pip_args, check=True, capture_output=True, encoding='utf-8', errors='replace', env=env_copy)
+        env_copy["PYTHONIOENCODING"] = "utf-8"  # needed for Windows
+        result = subprocess.run(
+            pip_args, check=True, capture_output=True, encoding="utf-8", errors="replace", env=env_copy
+        )
         logger.debug(f"Pip report subprocess completed in {time.time() - start_time:.2f}s")
         report = PipInstallReport.model_validate(json.loads(result.stdout))
     except subprocess.CalledProcessError as e:

@@ -1,6 +1,7 @@
 import importlib
 import os
 import venv
+from contextlib import contextmanager
 from pathlib import Path
 from unittest.mock import patch
 
@@ -12,15 +13,18 @@ from pipask.infra.executables import get_pip_python_executable
 from pipask.infra.sys_values import get_pip_sys_values
 
 
-@pytest.fixture(autouse=True, scope="function")
+def _clear_venv_dependent_caches():
+    get_pip_python_executable.cache_clear()
+    get_pip_sys_values.cache_clear()
+    from pipask._vendor.pip._vendor import pkg_resources
+
+    importlib.reload(pkg_resources)
+
+
+@pytest.fixture()
 def clear_venv_dependent_caches():
-    def _clear():
-        get_pip_python_executable.cache_clear()
-        get_pip_sys_values.cache_clear()
-        from pipask._vendor.pip._vendor import pkg_resources
-        importlib.reload(pkg_resources)
-    _clear()
-    return _clear # Return in case the test needs to call it again
+    _clear_venv_dependent_caches()
+    return _clear_venv_dependent_caches  # Return in case the test needs to call it again
 
 
 def pytest_collection_modifyitems(config, items):
@@ -49,4 +53,11 @@ def with_venv_python(tmp_path_factory: TempPathFactory):
     path_env_var = str(venv_path / platform_scripts_dir) + os.pathsep + os.environ["PATH"]
     with patch.dict(os.environ, {"PATH": path_env_var, "VIRTUAL_ENV": str(venv_path)}):
         os.environ.pop("PYTHONHOME", None)
+        yield venv_python
+
+
+@pytest.fixture
+def temp_venv_python(tmp_path_factory):
+    with contextmanager(with_venv_python)(tmp_path_factory) as venv_python:
+        _clear_venv_dependent_caches()
         yield venv_python
