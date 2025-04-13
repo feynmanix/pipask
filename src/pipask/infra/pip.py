@@ -1,4 +1,5 @@
 import json
+import os
 import subprocess
 
 import sys
@@ -140,7 +141,9 @@ def get_pip_install_report_unsafe(parsed_args: InstallArgs) -> "PipInstallReport
     logger.debug(f"Running pip report subprocess: {' '.join(pip_args)}")
     start_time = time.time()
     try:
-        result = subprocess.run(pip_args, check=True, capture_output=True, encoding='utf-8', errors='replace')
+        env_copy = os.environ.copy()
+        env_copy["PYTHONIOENCODING"] = "utf-8"
+        result = subprocess.run(pip_args, check=True, capture_output=True, encoding='utf-8', errors='replace', env=env_copy)
         logger.debug(f"Pip report subprocess completed in {time.time() - start_time:.2f}s")
         report = PipInstallReport.model_validate(json.loads(result.stdout))
     except subprocess.CalledProcessError as e:

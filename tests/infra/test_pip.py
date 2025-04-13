@@ -294,7 +294,8 @@ def test_install_reports_respects_env_vars(temp_venv_python, monkeypatch, tmp_pa
     _assert_same_reports(report, expected)
 
 
-def test_install_report_from_custom_index(temp_venv_python, data_dir):
+def test_install_report_from_custom_index(temp_venv_python, data_dir, clear_venv_dependent_caches):
+    clear_venv_dependent_caches()
     assert temp_venv_python
     with _start_pypi_server(data_dir) as port:
         args = _to_parsed_args(
