@@ -20,6 +20,8 @@ _SUCCESS_CLASSIFIERS = [
 
 
 class ReleaseMetadataChecker(Checker):
+    priority = 50
+
     @property
     def description(self) -> str:
         return "Checking release metadata"
@@ -30,23 +32,44 @@ class ReleaseMetadataChecker(Checker):
         pkg = package.pinned_requirement
         resolved_release_info = await release_info_future
         if resolved_release_info is None:
-            return CheckResult(pkg, result_type=CheckResultType.FAILURE, message="No release information available")
+            return CheckResult(
+                pkg,
+                result_type=CheckResultType.FAILURE,
+                message="No release information available",
+                priority=self.priority,
+            )
         if resolved_release_info.info.yanked:
             reason = (
                 f" (reason: {resolved_release_info.info.yanked_reason})"
                 if resolved_release_info.info.yanked_reason
                 else ""
             )
-            return CheckResult(pkg, result_type=CheckResultType.FAILURE, message=f"The release is yanked{reason}")
+            return CheckResult(
+                pkg,
+                result_type=CheckResultType.FAILURE,
+                message=f"The release is yanked{reason}",
+                priority=self.priority,
+            )
         if classifier := _first_matching_classifier(resolved_release_info, _WARNING_CLASSIFIERS):
             return CheckResult(
-                pkg, result_type=CheckResultType.WARNING, message=f"Package is classified as {classifier}"
+                pkg,
+                result_type=CheckResultType.WARNING,
+                message=f"Package is classified as {classifier}",
+                priority=self.priority,
             )
         if classifier := _first_matching_classifier(resolved_release_info, _SUCCESS_CLASSIFIERS):
             return CheckResult(
-                pkg, result_type=CheckResultType.SUCCESS, message=f"Package is classified as {classifier}"
+                pkg,
+                result_type=CheckResultType.SUCCESS,
+                message=f"Package is classified as {classifier}",
+                priority=self.priority,
             )
-        return CheckResult(pkg, result_type=CheckResultType.NEUTRAL, message="No development status classifiers")
+        return CheckResult(
+            pkg,
+            result_type=CheckResultType.NEUTRAL,
+            message="No development status classifiers",
+            priority=self.priority,
+        )
 
 
 def _first_matching_classifier(release_info: ReleaseResponse, classifiers: list[str]) -> str | None:

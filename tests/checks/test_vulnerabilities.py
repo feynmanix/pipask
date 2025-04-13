@@ -46,6 +46,7 @@ async def test_no_vulnerabilities(checker, sample_package):
         pinned_requirement=sample_package.pinned_requirement,
         result_type=CheckResultType.SUCCESS,
         message="No known vulnerabilities found",
+        priority=ReleaseVulnerabilityChecker.priority,
     )
 
 
@@ -100,6 +101,7 @@ async def test_single_vulnerability(
         pinned_requirement=sample_package.pinned_requirement,
         result_type=result_type,
         message=f"Found the following vulnerabilities: {message}",
+        priority=ReleaseVulnerabilityChecker.priority,
     )
 
 
@@ -127,6 +129,7 @@ async def test_no_release_info(checker, sample_package):
         pinned_requirement=sample_package.pinned_requirement,
         result_type=CheckResultType.FAILURE,
         message="No release information available",
+        priority=ReleaseVulnerabilityChecker.priority,
     )
 
 
@@ -152,6 +155,7 @@ async def test_multiple_vulnerabilities(checker, sample_package, vulnerability_d
         pinned_requirement=sample_package.pinned_requirement,
         result_type=CheckResultType.FAILURE,
         message="Found the following vulnerabilities: [red]CVE-1C (CRITICAL)[/red], [yellow]CVE-2M (Medium)[/yellow], [default]CVE-3L (Low)[/default]",
+        priority=ReleaseVulnerabilityChecker.priority,
     )
 
 

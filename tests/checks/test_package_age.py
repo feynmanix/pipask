@@ -31,6 +31,7 @@ async def test_no_distributions():
         pinned_requirement="package==1.0.0",
         result_type=CheckResultType.FAILURE,
         message="No distributions information available",
+        priority=PackageAge.priority,
     )
 
 
@@ -56,6 +57,7 @@ async def test_too_new_package():
         pinned_requirement="package==1.0.0",
         result_type=CheckResultType.WARNING,
         message="A newly published package: created only 10 days ago",
+        priority=PackageAge.priority,
     )
 
 
@@ -100,6 +102,7 @@ async def test_too_old_release():
         pinned_requirement="package==1.0.0",
         result_type=CheckResultType.WARNING,
         message="The release is older than a year: 400 days old",
+        priority=PackageAge.priority,
     )
 
 
@@ -142,5 +145,8 @@ async def test_successful_check():
     result = await checker.check(REPORT_ITEM, release_info_future())
 
     assert result == CheckResult(
-        pinned_requirement="package==1.0.0", result_type=CheckResultType.SUCCESS, message="The release is 1 day old"
+        pinned_requirement="package==1.0.0",
+        result_type=CheckResultType.SUCCESS,
+        message="The release is 1 day old",
+        priority=PackageAge.priority,
     )
