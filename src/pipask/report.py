@@ -15,7 +15,7 @@ def print_report(check_results: list[CheckResult], console: Console) -> None:
         worst_result_color = worst_result.rich_color
         console.print(f"  [bold]\\[[{worst_result_color}]{package}[/{worst_result_color}]]")
 
-        # TODO: make sure these are sorted
+        package_results.sort(key=lambda r: r.priority)
         for check_result in package_results:
             color = (
                 "default"

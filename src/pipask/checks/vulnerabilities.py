@@ -11,6 +11,8 @@ MAX_DISPLAYED_VULNERABILITIES = 5
 
 
 class ReleaseVulnerabilityChecker(Checker):
+    priority = 40
+
     def __init__(self, vulnerability_details_service: VulnerabilityDetailsService):
         self._vulnerability_details_service = vulnerability_details_service
 
@@ -24,11 +26,21 @@ class ReleaseVulnerabilityChecker(Checker):
         pkg = package.pinned_requirement
         resolved_release_info = await release_info_future
         if resolved_release_info is None:
-            return CheckResult(pkg, result_type=CheckResultType.FAILURE, message="No release information available")
+            return CheckResult(
+                pkg,
+                result_type=CheckResultType.FAILURE,
+                message="No release information available",
+                priority=self.priority,
+            )
 
         relevant_vulnerabilities = [v for v in resolved_release_info.vulnerabilities if not v.withdrawn]
         if len(relevant_vulnerabilities) == 0:
-            return CheckResult(pkg, result_type=CheckResultType.SUCCESS, message="No known vulnerabilities found")
+            return CheckResult(
+                pkg,
+                result_type=CheckResultType.SUCCESS,
+                message="No known vulnerabilities found",
+                priority=self.priority,
+            )
 
         vulnerability_details = await asyncio.gather(
             *(self._vulnerability_details_service.get_details(v) for v in relevant_vulnerabilities)
@@ -39,6 +51,7 @@ class ReleaseVulnerabilityChecker(Checker):
             pkg,
             result_type=worst_severity.result_type if worst_severity is not None else CheckResultType.WARNING,
             message=f"Found the following vulnerabilities: {formatted_vulnerabilities}",
+            priority=self.priority,
         )
 
 

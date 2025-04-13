@@ -37,3 +37,4 @@ class CheckResult:
     pinned_requirement: str
     result_type: CheckResultType
     message: str
+    priority: int
