@@ -448,6 +448,21 @@ def test_install_report_with_extras(temp_venv_python):
 
 
 @pytest.mark.integration
+@pytest.mark.parametrize("use_importlib", [True, False])
+def test_install_report_works_both_with_pkg_resources_and_importlib(temp_venv_python, monkeypatch, use_importlib):
+    assert temp_venv_python
+    args = _to_parsed_args(["install", "--isolated", "requests[socks]==2.32.3"])
+    expected = get_pip_install_report_unsafe(args)
+    monkeypatch.setenv("_PIP_USE_IMPORTLIB_METADATA", "1" if use_importlib else "0")
+
+    report = get_pip_install_report_from_pypi(args)
+
+    _assert_same_reports(report, expected)
+    assert len(report.install) > 2
+    pysocks = next(i for i in report.install if i.metadata.name == "PySocks")
+    assert pysocks
+
+@pytest.mark.integration
 def test_install_report_with_no_deps(temp_venv_python):
     assert temp_venv_python
     args = _to_parsed_args(["install", "--isolated", "--no-deps", "black==25.1.0"])

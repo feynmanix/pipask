@@ -13,7 +13,9 @@ temp_venv_python = pytest.fixture()(with_venv_python)
 def test_returns_sys_values_respecting_venv(
     temp_venv_python: str,
     monkeypatch: pytest.MonkeyPatch,
+    clear_venv_dependent_caches
 ) -> None:
+    clear_venv_dependent_caches()
     assert temp_venv_python
 
     values = get_pip_sys_values()
