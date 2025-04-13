@@ -10,8 +10,8 @@ temp_venv_python = pytest.fixture()(with_venv_python)
 
 
 @pytest.mark.integration
-def test_installs_package_in_venv(temp_venv_python: str):
-    # Prepare arguments
+def test_installs_package_in_venv(temp_venv_python: str, clear_venv_dependent_caches):
+    clear_venv_dependent_caches()
     args = ["install", "--no-input", "pyfluent-iterables"]
 
     # Act
