@@ -8,7 +8,6 @@ import pytest
 from _pytest.tmpdir import TempPathFactory
 
 from pipask._vendor.pip._internal.locations import get_bin_prefix
-from pipask._vendor.pip._vendor import pkg_resources
 from pipask.infra.executables import get_pip_python_executable
 from pipask.infra.sys_values import get_pip_sys_values
 
@@ -18,6 +17,7 @@ def clear_venv_dependent_caches():
     def _clear():
         get_pip_python_executable.cache_clear()
         get_pip_sys_values.cache_clear()
+        from pipask._vendor.pip._vendor import pkg_resources
         importlib.reload(pkg_resources)
     _clear()
     return _clear # Return in case the test needs to call it again

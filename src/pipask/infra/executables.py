@@ -12,7 +12,10 @@ _fallback_python_command = "python3"
 def get_pip_python_executable() -> str:
     # We can't use sys.executable because it may be a different python than the one we are using
     # pip debug is not guaranteed to be stable, but hopefully this won't change
-    pip_debug_output = subprocess.run(["pip", "debug"], check=True, text=True, capture_output=True)
+    command = [shutil.which("pip"), "debug"]
+    logger.debug("Running command: %s", " ".join(command))
+    pip_debug_output = subprocess.run(command, check=True, text=True, capture_output=True)
+
     executable_line = next(line for line in pip_debug_output.stdout.splitlines() if line.startswith("sys.executable:"))
     if not executable_line:
         # Could happen if pip debug output changes?
