@@ -56,6 +56,8 @@ class _SpinnerAndStatusColumn(ProgressColumn):
                 return CheckResultType.SUCCESS.rich_icon
             elif task.fields["result"] is False or task.fields["result"] is CheckResultType.FAILURE:
                 return CheckResultType.FAILURE.rich_icon
+            elif task.fields["result"] is CheckResultType.ERROR:
+                return CheckResultType.ERROR.rich_icon
             elif task.fields["result"] is CheckResultType.WARNING:
                 return CheckResultType.WARNING.rich_icon
             else:

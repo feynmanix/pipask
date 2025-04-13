@@ -1,6 +1,7 @@
 from enum import Enum
 from dataclasses import dataclass
 from typing import Optional
+from asyncio import Future
 
 
 class CheckResultType(str, Enum):
@@ -8,6 +9,7 @@ class CheckResultType(str, Enum):
     FAILURE = ("failure", "red", "[red]✖[/red]")
     WARNING = ("warning", "yellow", "[yellow bold]![/yellow bold]")
     NEUTRAL = ("neutral", "default", "✔")
+    ERROR = ("error", "red", "[red]![/red]")
 
     rich_color: str
     rich_icon: str
@@ -23,6 +25,8 @@ class CheckResultType(str, Enum):
     def get_worst(*results: Optional["CheckResultType"]) -> Optional["CheckResultType"]:
         if any(result is CheckResultType.FAILURE for result in results):
             return CheckResultType.FAILURE
+        if any(result is CheckResultType.ERROR for result in results):
+            return CheckResultType.ERROR
         if any(result is CheckResultType.WARNING for result in results):
             return CheckResultType.WARNING
         if any(result is CheckResultType.NEUTRAL for result in results):
@@ -30,6 +34,12 @@ class CheckResultType(str, Enum):
         if any(result is CheckResultType.SUCCESS for result in results):
             return CheckResultType.SUCCESS
         return None
+
+    @staticmethod
+    def from_result_future(future: Future["CheckResult"]) -> "CheckResultType":
+        if future.cancelled() or future.exception():
+            return CheckResultType.ERROR
+        return future.result().result_type
 
 
 @dataclass

@@ -18,7 +18,7 @@ from pipask.checks.package_age import PackageAge
 from pipask.checks.package_downloads import PackageDownloadsChecker
 from pipask.checks.release_metadata import ReleaseMetadataChecker
 from pipask.checks.repo_popularity import RepoPopularityChecker
-from pipask.checks.types import CheckResult
+from pipask.checks.types import CheckResult, CheckResultType
 from pipask.checks.vulnerabilities import ReleaseVulnerabilityChecker
 from pipask.cli_args import InstallArgs
 from pipask.cli_helpers import SimpleTaskProgress
@@ -162,7 +162,9 @@ async def execute_checks(
             progress_task = progress.add_task(checker.description, total=len(packages_to_install))
             for package, releases_info_future in zip(packages_to_install, releases_info_futures):
                 check_result_future = asyncio.create_task(checker.check(package, releases_info_future))
-                check_result_future.add_done_callback(lambda f, task=progress_task: task.update(f.result().result_type))
+                check_result_future.add_done_callback(
+                    lambda f, task=progress_task: task.update(CheckResultType.from_result_future(f))
+                )
                 check_result_futures.append(check_result_future)
         return await asyncio.gather(*check_result_futures)
 
