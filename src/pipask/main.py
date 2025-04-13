@@ -10,7 +10,6 @@ from rich import traceback as rich_traceback
 from rich.console import Console
 from rich.logging import RichHandler
 from rich.prompt import Confirm
-
 import pipask._vendor.pip._internal.exceptions
 import pipask._vendor.pip._internal.utils.logging
 from pipask.checks.license import LicenseChecker
@@ -22,12 +21,11 @@ from pipask.checks.types import CheckResult, CheckResultType
 from pipask.checks.vulnerabilities import ReleaseVulnerabilityChecker
 from pipask.cli_args import InstallArgs
 from pipask.cli_helpers import SimpleTaskProgress
-from pipask.exception import HandoverToPipException, PipAskResolutionException
+from pipask.exception import HandoverToPipException, PipAskCodeExecutionDeniedException
 from pipask.infra.pip import (
     InstallationReportItem,
     PipInstallReport,
     get_pip_install_report_from_pypi,
-    get_pip_install_report_unsafe,
     parse_pip_arguments,
     parse_pip_install_arguments,
     pip_pass_through,
@@ -37,6 +35,7 @@ from pipask.infra.pypistats import PypiStatsClient
 from pipask.infra.repo_client import RepoClient
 from pipask.infra.vulnerability_details import OsvVulnerabilityDetailsService
 from pipask.report import print_report
+from pipask.code_execution_guard import PackageCodeExecutionGuard
 
 console = Console()
 
@@ -105,7 +104,7 @@ def main(args: list[str] | None = None) -> None:
         else:
             console.print("[yellow]Aborted by user.")
             sys.exit(2)
-    except KeyboardInterrupt:
+    except (KeyboardInterrupt, PipAskCodeExecutionDeniedException):
         console.print("\n[yellow]Aborted by user.")
     except HTTPError as exc:
         logger.error(f"\nNetwork error when making request to {exc.request.url}")
@@ -127,19 +126,14 @@ def main(args: list[str] | None = None) -> None:
 
 
 def get_pip_install_report_with_consent(args: InstallArgs) -> PipInstallReport:
-    try:
-        pipask._vendor.pip._internal.utils.logging.setup_logging(
-            verbosity=1 if debug_logging else -1, no_color=False, user_log_file=None
-        )
-        return get_pip_install_report_from_pypi(args)
-    except PipAskResolutionException as e:
-        message_formatted = f" ({e.message})" if e.message else ""
-        console.print(
-            f"[yellow]Unable to resolve dependencies without preparing a source distribution{message_formatted}\n"
-            + "Trying to resolve dependencies with pip - note that this may execute 3rd party code before pipask can run checks[/yellow]"
-        )
-        # TODO: ask for consent if configured to do so
-        return get_pip_install_report_unsafe(args)
+    pipask._vendor.pip._internal.utils.logging.setup_logging(
+        verbosity=1 if debug_logging else -1, no_color=False, user_log_file=None
+    )
+    # PackageCodeExecutionGuard is the part responsible for asking for user consent;
+    # its check_execution_allowed() method should be called on all code paths inside
+    # get_pip_install_report_from_pypi() that may execute 3rd party code.
+    PackageCodeExecutionGuard.reset_confirmation_state()
+    return get_pip_install_report_from_pypi(args)
 
 
 async def execute_checks(

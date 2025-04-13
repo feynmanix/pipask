@@ -99,7 +99,7 @@ def get_pip_install_report_from_pypi(args: InstallArgs) -> "PipInstallReport":
     """
     Get install report by getting all the metadata possible from PyPI or from safe sources such as built wheels.
 
-    :raises PipAskResolutionException: if resolution of versions to install is not possible from safe sources
+    :raises PipAskCodeExecutionDeniedException: if resolution of versions to install is not possible from safe sources
     """
 
     install_command = InstallCommand(name="install", summary="", isolated=args.isolated)
