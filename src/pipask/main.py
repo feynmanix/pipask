@@ -44,7 +44,7 @@ console = Console()
 pipask_log_level = getattr(logging, os.getenv("PIPASK_LOG_LEVEL", "INFO").upper(), logging.INFO)
 debug_logging = pipask_log_level < logging.INFO
 log_format = "%(name)s - %(message)s"
-logging.basicConfig(level=logging.WARNING, format=log_format, handlers=[RichHandler(console=console)])
+logging.basicConfig(level=logging.WARNING, format=log_format, handlers=[RichHandler(console=console, show_time=False)])
 logging.getLogger("pipask").setLevel(pipask_log_level)
 logger = logging.getLogger(__name__)
 
@@ -107,14 +107,21 @@ def main(args: list[str] | None = None) -> None:
             sys.exit(2)
     except KeyboardInterrupt:
         console.print("\n[yellow]Aborted by user.")
+    except HTTPError as exc:
+        logger.error(f"\nNetwork error when making request to {exc.request.url}")
+        logger.debug("Exception information:", exc_info=True)
+        sys.exit(1)
     except (
         pipask._vendor.pip._internal.exceptions.InstallationError,
         pipask._vendor.pip._internal.exceptions.UninstallationError,
         pipask._vendor.pip._internal.exceptions.BadCommand,
         pipask._vendor.pip._internal.exceptions.NetworkConnectionError,
-        HTTPError,
     ) as exc:
-        console.print(exc)
+        logger.error(f"Error: {exc}")
+        logger.debug("Exception information:", exc_info=True)
+        sys.exit(1)
+    except Exception:
+        logger.error("Unexpected error", exc_info=True)
         logger.debug("Exception information:", exc_info=True)
         sys.exit(1)
 
