@@ -20,6 +20,12 @@ class CheckTask:
         self._result = CheckResultType.get_worst(self._result, partial_result)
         self._progress.update(self._task_id, advance=1, result=self._result)
 
+    def show(self):
+        self._progress.update(self._task_id, visible=True)
+
+    def hide(self):
+        self._progress.update(self._task_id, visible=False)
+
     def start(self):
         self._progress.start_task(self._task_id)
 
