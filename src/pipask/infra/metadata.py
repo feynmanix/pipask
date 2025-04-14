@@ -70,6 +70,7 @@ def _get_pypi_metadata_distribution(
 ) -> BaseDistribution | None:
     if pipask._vendor.pip._internal.utils.temp_dir._tempdir_manager is None:
         raise RuntimeError(
+            # Required inside get_metadata_distribution(), fail fast
             "Tempdir manager is not initialized. This is required by pip._internal.metadata.importlib._dists.Distribution.from_metadata_file_contents"
         )
     release = get_pypi_release_info_sync(canonical_name, str(version), pip_session)

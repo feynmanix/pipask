@@ -6,7 +6,7 @@ import sys
 import time
 from typing import Optional, Sequence
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, model_validator
 
 import pipask._vendor.pip._internal.utils.logging
 from pipask._vendor.pip._internal.cli.main_parser import create_main_parser
@@ -167,6 +167,13 @@ class InstallationReportItemMetadata(BaseModel):
 class InstallationReportArchiveInfo(BaseModel):
     hash: str | None = None
     hashes: dict[str, str] | None = None
+
+    @model_validator(mode="after")
+    def fill_hashes_if_missing(self):
+        if self.hash is not None and self.hashes is None:
+            hash_name, hash_value = self.hash.split("=", 1)
+            self.hashes = {hash_name: hash_value}
+        return self
 
 
 class InstallationReportItemDownloadInfo(BaseModel):

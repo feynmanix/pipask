@@ -516,31 +516,12 @@ def _normalize_report(report: PipInstallReport):
     for i in report.install:
         i.metadata.classifier = sorted(i.metadata.classifier)
         i.metadata.license = i.metadata.license.replace("\r\n", "\n") if i.metadata.license else None
-        if (
-            i.download_info
-            and i.download_info.archive_info
-            and i.download_info.archive_info.hashes is None
-            and i.download_info.archive_info.hash is not None
-        ):
-            # This happens on GitHub, not sure why, probably not worth fixing properly
-            hash_name, hash_value = i.download_info.archive_info.hash.split("=", 1)
-            i.download_info.archive_info.hashes = {hash_name: hash_value}
 
 
 def _assert_same_reports(actual_report: PipInstallReport, expected_report: PipInstallReport):
     _normalize_report(actual_report)
     _normalize_report(expected_report)
     assert actual_report == expected_report
-
-
-def _get_sys_path_from_env(python_executable: str):
-    python_lines = [
-        "import sys;",
-        "import json;",
-        "print(json.dumps(sys.path))",
-    ]
-    subprocess_output = subprocess.check_output([python_executable, "-c", "\n".join(python_lines)])
-    return json.loads(subprocess_output)
 
 
 def _get_free_port():
