@@ -20,7 +20,7 @@ from pipask.checks.repo_popularity import RepoPopularityChecker
 from pipask.checks.types import CheckResult, CheckResultType
 from pipask.checks.vulnerabilities import ReleaseVulnerabilityChecker
 from pipask.cli_args import InstallArgs
-from pipask.cli_helpers import SimpleTaskProgress
+from pipask.cli_helpers import CheckTask, SimpleTaskProgress
 from pipask.exception import HandoverToPipException, PipAskCodeExecutionDeniedException
 from pipask.infra.pip import (
     InstallationReportItem,
@@ -77,7 +77,7 @@ def main(args: list[str] | None = None) -> None:
         with SimpleTaskProgress(console=console) as progress:
             pip_report_task = progress.add_task("Resolving dependencies to install")
             try:
-                pip_report = get_pip_install_report_with_consent(install_args)
+                pip_report = get_pip_install_report_with_consent(install_args, pip_report_task)
                 pip_report_task.update(True)
             except Exception as e:
                 pip_report_task.update(False)
@@ -125,14 +125,14 @@ def main(args: list[str] | None = None) -> None:
         sys.exit(1)
 
 
-def get_pip_install_report_with_consent(args: InstallArgs) -> PipInstallReport:
+def get_pip_install_report_with_consent(args: InstallArgs, progress_task: CheckTask) -> PipInstallReport:
     pipask._vendor.pip._internal.utils.logging.setup_logging(
         verbosity=1 if debug_logging else -1, no_color=False, user_log_file=None
     )
     # PackageCodeExecutionGuard is the part responsible for asking for user consent;
     # its check_execution_allowed() method should be called on all code paths inside
     # get_pip_install_report_from_pypi() that may execute 3rd party code.
-    PackageCodeExecutionGuard.reset_confirmation_state()
+    PackageCodeExecutionGuard.reset_confirmation_state(progress_task)
     return get_pip_install_report_from_pypi(args)
 
 
