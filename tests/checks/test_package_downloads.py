@@ -4,7 +4,8 @@ import pytest
 
 from pipask.checks.package_downloads import PackageDownloadsChecker
 from pipask.checks.types import CheckResultType
-from pipask.infra.pip import InstallationReportItem, InstallationReportItemDownloadInfo, InstallationReportItemMetadata
+from pipask.infra.pip_report import InstallationReportItem, InstallationReportItemDownloadInfo, \
+    InstallationReportItemMetadata
 from pipask.infra.pypistats import DownloadStats, PypiStatsClient
 
 PACKAGE_NAME = "package"

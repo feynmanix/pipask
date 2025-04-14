@@ -4,8 +4,7 @@ from typing import Awaitable
 from pipask.infra.pypi import ReleaseResponse, PypiClient
 from pipask.checks.types import CheckResult, CheckResultType
 from pipask.checks.base_checker import Checker
-from pipask.infra.pip import InstallationReportItem
-
+from pipask.infra.pip_report import InstallationReportItem
 
 _TOO_NEW_DAYS = 22
 _TOO_OLD_DAYS = 365

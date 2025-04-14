@@ -23,13 +23,12 @@ from pipask.code_execution_guard import PackageCodeExecutionGuard
 from pipask.exception import HandoverToPipException
 from pipask.infra.executables import get_pip_command
 from pipask.infra.pip import (
-    InstallationReportItem,
-    PipInstallReport,
     get_pip_install_report_from_pypi,
     get_pip_install_report_unsafe,
     parse_pip_arguments,
     parse_pip_install_arguments,
 )
+from pipask.infra.pip_report import InstallationReportItem, PipInstallReport
 from tests.conftest import with_venv_python
 
 temp_venv_python_shared = pytest.fixture(scope="module")(with_venv_python)

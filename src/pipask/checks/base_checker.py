@@ -2,7 +2,7 @@ import abc
 from typing import Awaitable
 
 from pipask.checks.types import CheckResult
-from pipask.infra.pip import InstallationReportItem
+from pipask.infra.pip_report import InstallationReportItem
 from pipask.infra.pypi import ReleaseResponse
 
 

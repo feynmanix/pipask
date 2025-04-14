@@ -5,7 +5,8 @@ import pytest
 
 from pipask.checks.types import CheckResult, CheckResultType
 from pipask.checks.vulnerabilities import ReleaseVulnerabilityChecker, _format_vulnerabilities
-from pipask.infra.pip import InstallationReportItem, InstallationReportItemDownloadInfo, InstallationReportItemMetadata
+from pipask.infra.pip_report import InstallationReportItem, InstallationReportItemDownloadInfo, \
+    InstallationReportItemMetadata
 from pipask.infra.pypi import ProjectInfo, ReleaseResponse, VulnerabilityPypi
 from pipask.infra.vulnerability_details import (
     VulnerabilityDetails,

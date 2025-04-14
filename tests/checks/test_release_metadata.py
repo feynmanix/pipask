@@ -4,7 +4,8 @@ from unittest.mock import AsyncMock
 from pipask.checks.release_metadata import ReleaseMetadataChecker
 from pipask.checks.types import CheckResultType
 from pipask.infra.pypi import ReleaseResponse, ProjectInfo
-from pipask.infra.pip import InstallationReportItem, InstallationReportItemMetadata, InstallationReportItemDownloadInfo
+from pipask.infra.pip_report import InstallationReportItem, InstallationReportItemDownloadInfo, \
+    InstallationReportItemMetadata
 
 PACKAGE_NAME = "package"
 PACKAGE_VERSION = "1.0.0"
