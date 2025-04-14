@@ -23,13 +23,12 @@ from pipask.cli_args import InstallArgs
 from pipask.cli_helpers import CheckTask, SimpleTaskProgress
 from pipask.exception import HandoverToPipException, PipAskCodeExecutionDeniedException
 from pipask.infra.pip import (
-    InstallationReportItem,
-    PipInstallReport,
     get_pip_install_report_from_pypi,
     parse_pip_arguments,
     parse_pip_install_arguments,
     pip_pass_through,
 )
+from pipask.infra.pip_report import InstallationReportItem, PipInstallReport
 from pipask.infra.pypi import PypiClient, ReleaseResponse
 from pipask.infra.pypistats import PypiStatsClient
 from pipask.infra.repo_client import RepoClient

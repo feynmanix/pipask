@@ -6,8 +6,6 @@ import sys
 import time
 from typing import Optional, Sequence
 
-from pydantic import BaseModel, Field, model_validator
-
 import pipask._vendor.pip._internal.utils.logging
 from pipask._vendor.pip._internal.cli.main_parser import create_main_parser
 from pipask._vendor.pip._internal.commands import commands_dict
@@ -22,6 +20,8 @@ from pipask._vendor.pip._internal.utils.temp_dir import (
 from pipask.cli_args import InstallArgs, PipCommandArgs
 from pipask.exception import HandoverToPipException, PipaskException
 from pipask.infra.executables import get_pip_command
+from pipask.infra.pip_report import InstallationReportItem, InstallationReportItemDownloadInfo, \
+    InstallationReportItemMetadata, PipInstallReport
 
 logger = pipask._vendor.pip._internal.utils.logging.getLogger(__name__)
 
@@ -154,45 +154,3 @@ def get_pip_install_report_unsafe(parsed_args: InstallArgs) -> "PipInstallReport
         )
         raise PipaskException(f"Error while getting pip report: {e}") from e
     return report
-
-
-# See https://pip.pypa.io/en/stable/reference/installation-report/
-class InstallationReportItemMetadata(BaseModel):
-    name: str
-    version: str
-    license: str | None = None
-    classifier: list[str] = Field(default_factory=list)
-
-
-class InstallationReportArchiveInfo(BaseModel):
-    hash: str | None = None
-    hashes: dict[str, str] | None = None
-
-    @model_validator(mode="after")
-    def fill_hashes_if_missing(self):
-        if self.hash is not None and self.hashes is None:
-            hash_name, hash_value = self.hash.split("=", 1)
-            self.hashes = {hash_name: hash_value}
-        return self
-
-
-class InstallationReportItemDownloadInfo(BaseModel):
-    url: str
-    archive_info: InstallationReportArchiveInfo | None = None
-
-
-class InstallationReportItem(BaseModel):
-    metadata: InstallationReportItemMetadata
-    download_info: InstallationReportItemDownloadInfo | None
-    requested: bool
-    is_direct: bool
-    is_yanked: bool = False
-
-    @property
-    def pinned_requirement(self) -> str:
-        return f"{self.metadata.name}=={self.metadata.version}"
-
-
-class PipInstallReport(BaseModel):
-    version: str
-    install: list[InstallationReportItem]

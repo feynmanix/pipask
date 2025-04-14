@@ -4,8 +4,7 @@ from pipask.infra.pypi import ReleaseResponse
 from pipask.infra.repo_client import RepoClient
 from pipask.checks.types import CheckResult, CheckResultType
 from pipask.checks.base_checker import Checker
-from pipask.infra.pip import InstallationReportItem
-
+from pipask.infra.pip_report import InstallationReportItem
 
 _WARNING_THRESHOLD = 1000
 _BOLD_WARNING_THRESHOLD = 100

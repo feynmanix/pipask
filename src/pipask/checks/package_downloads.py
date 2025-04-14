@@ -1,7 +1,7 @@
 from pipask.infra.pypistats import PypiStatsClient
 from pipask.checks.types import CheckResult, CheckResultType
 from pipask.checks.base_checker import Checker
-from pipask.infra.pip import InstallationReportItem
+from pipask.infra.pip_report import InstallationReportItem
 from pipask.infra.pypi import ReleaseResponse
 from typing import Awaitable
 
