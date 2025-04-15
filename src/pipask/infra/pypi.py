@@ -30,6 +30,7 @@ class ProjectUrls(BaseModel):
     documentation_lowercase: Optional[str] = Field(None, alias="documentation")
     repository_lowercase: Optional[str] = Field(None, alias="repository")
     issues_lowercase: Optional[str] = Field(None, alias="issues")
+    download_lowercase: Optional[str] = Field(None, alias="download")
 
     bug_reports_capitalized: Optional[str] = Field(None, alias="Bug Reports")
     homepage_capitalized: Optional[str] = Field(None, alias="Homepage")
@@ -37,6 +38,7 @@ class ProjectUrls(BaseModel):
     documentation_capitalized: Optional[str] = Field(None, alias="Documentation")
     repository_capitalized: Optional[str] = Field(None, alias="Repository")
     issues_capitalized: Optional[str] = Field(None, alias="Issues")
+    download_capitalized: Optional[str] = Field(None, alias="Download")
 
     @property
     def bug_reports(self) -> str | None:
@@ -62,8 +64,12 @@ class ProjectUrls(BaseModel):
     def issues(self) -> str | None:
         return self.issues_capitalized or self.issues_lowercase
 
+    @property
+    def download(self) -> str | None:
+        return self.download_capitalized or self.download_lowercase
+
     def recognized_repo_url(self) -> str | None:
-        for url in [self.repository, self.source, self.homepage, self.documentation, self.issues]:
+        for url in [self.repository, self.source, self.homepage, self.documentation, self.issues, self.download]:
             if url and (repo_url := _get_maybe_repo_url(url)):
                 return repo_url
         return None
