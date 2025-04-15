@@ -156,8 +156,7 @@ async def execute_checks(
         ]
 
         releases_info_futures: list[Awaitable[ReleaseResponse | None]] = [
-            asyncio.create_task(pypi_client.get_release_info(package.metadata.name, package.metadata.version))
-            for package in packages_to_install
+            asyncio.create_task(pypi_client.get_matching_release_info(package)) for package in packages_to_install
         ]
         check_result_futures = []
         for checker in checkers:

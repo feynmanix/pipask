@@ -10,7 +10,6 @@ from packaging.utils import (
 )
 from packaging.version import Version
 
-import pipask._vendor.pip._internal.distributions.base
 import pipask._vendor.pip._internal.utils.temp_dir
 from pipask._vendor.pip._internal.metadata import BaseDistribution, get_metadata_distribution
 from pipask._vendor.pip._internal.models.index import PyPI
@@ -125,6 +124,9 @@ def fetch_metadata_from_pypi_is_available(req: InstallRequirement, pip_session: 
             f"Mismatch of requirement name '{req_name}' and remote file name {req.link.url_without_fragment}"
         )
         return None
+
+    # Note: similar logic is in PypiClient
+
     if _is_from_pypi(req.link):
         return _get_pypi_metadata_distribution(req_name, parsed_version, pip_session)
     elif req.link.has_hash:

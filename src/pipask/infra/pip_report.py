@@ -2,6 +2,7 @@ from pydantic import BaseModel, Field, model_validator
 
 # See https://pip.pypa.io/en/stable/reference/installation-report/
 
+
 class InstallationReportItemMetadata(BaseModel):
     name: str
     version: str

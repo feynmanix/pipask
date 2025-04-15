@@ -20,8 +20,12 @@ from pipask._vendor.pip._internal.utils.temp_dir import (
 from pipask.cli_args import InstallArgs, PipCommandArgs
 from pipask.exception import HandoverToPipException, PipaskException
 from pipask.infra.executables import get_pip_command
-from pipask.infra.pip_report import InstallationReportItem, InstallationReportItemDownloadInfo, \
-    InstallationReportItemMetadata, PipInstallReport
+from pipask.infra.pip_report import (
+    InstallationReportItem,
+    InstallationReportItemDownloadInfo,
+    InstallationReportItemMetadata,
+    PipInstallReport,
+)
 
 logger = pipask._vendor.pip._internal.utils.logging.getLogger(__name__)
 
