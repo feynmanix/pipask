@@ -1,22 +1,19 @@
 from rich.console import Console
 
-from pipask.checks.types import CheckResult, CheckResultType
+from pipask.checks.types import CheckResultType, PackageCheckResults
 
 
-def print_report(check_results: list[CheckResult], console: Console) -> None:
-    # TODO: handle non-pypi packages explicitly - show warning they couldn't be checked
+def print_report(package_results: list[PackageCheckResults], console: Console) -> None:
     console.print("\nPackage check results:")
-    packages = set(result.pinned_requirement for result in check_results)
-    for package in packages:
-        package_results = [result for result in check_results if result.pinned_requirement == package]
+    for package_result in package_results:
         worst_result = (
-            CheckResultType.get_worst(*(result.result_type for result in package_results)) or CheckResultType.SUCCESS
+            CheckResultType.get_worst(*(result.result_type for result in package_result.results))
+            or CheckResultType.SUCCESS
         )
         worst_result_color = worst_result.rich_color
-        console.print(f"  [bold]\\[[{worst_result_color}]{package}[/{worst_result_color}]]")
+        console.print(f"  [bold]\\[[{worst_result_color}]{package_result.pinned_requirement}[/{worst_result_color}]]")
 
-        package_results.sort(key=lambda r: r.priority)
-        for check_result in package_results:
+        for check_result in package_result.results:
             color = (
                 "default"
                 if check_result.result_type is CheckResultType.SUCCESS

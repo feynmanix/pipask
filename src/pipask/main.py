@@ -10,17 +10,20 @@ from rich import traceback as rich_traceback
 from rich.console import Console
 from rich.logging import RichHandler
 from rich.prompt import Confirm
+
 import pipask._vendor.pip._internal.exceptions
 import pipask._vendor.pip._internal.utils.logging
+from pipask.checks.base_checker import Checker
 from pipask.checks.license import LicenseChecker
 from pipask.checks.package_age import PackageAge
 from pipask.checks.package_downloads import PackageDownloadsChecker
 from pipask.checks.release_metadata import ReleaseMetadataChecker
 from pipask.checks.repo_popularity import RepoPopularityChecker
-from pipask.checks.types import CheckResult, CheckResultType
+from pipask.checks.types import CheckResult, CheckResultType, PackageCheckResults
 from pipask.checks.vulnerabilities import ReleaseVulnerabilityChecker
 from pipask.cli_args import InstallArgs
 from pipask.cli_helpers import CheckTask, SimpleTaskProgress
+from pipask.code_execution_guard import PackageCodeExecutionGuard
 from pipask.exception import HandoverToPipException, PipAskCodeExecutionDeniedException
 from pipask.infra.pip import (
     get_pip_install_report_from_pypi,
@@ -28,13 +31,12 @@ from pipask.infra.pip import (
     parse_pip_install_arguments,
     pip_pass_through,
 )
-from pipask.infra.pip_report import InstallationReportItem, PipInstallReport
+from pipask.infra.pip_report import InstallationReportItem, InstallationReportItemMetadata, PipInstallReport
 from pipask.infra.pypi import PypiClient, VerifiedPypiReleaseInfo
 from pipask.infra.pypistats import PypiStatsClient
 from pipask.infra.repo_client import RepoClient
 from pipask.infra.vulnerability_details import OsvVulnerabilityDetailsService
 from pipask.report import print_report
-from pipask.code_execution_guard import PackageCodeExecutionGuard
 
 console = Console()
 
@@ -72,7 +74,7 @@ def main(args: list[str] | None = None) -> None:
         # 2. Resolve dependencies
         if debug_logging:
             rich_traceback.install(show_locals=True)
-        check_results = None
+        check_results: list[PackageCheckResults] | None = None
         with SimpleTaskProgress(console=console) as progress:
             pip_report_task = progress.add_task("Resolving dependencies to install")
             try:
@@ -137,9 +139,28 @@ def get_pip_install_report_with_consent(args: InstallArgs, progress_task: CheckT
     return get_pip_install_report_from_pypi(args)
 
 
+class CheckProgressTracker:
+    def __init__(self, progress: SimpleTaskProgress, checkers: list[Checker], total_count: int):
+        self._progress = progress
+        self._progress_tasks_by_checker = {
+            id(checker): progress.add_task(checker.description, total=total_count) for checker in checkers
+        }
+
+    def update_all_checks(self, partial_result: bool | CheckResultType):
+        for progress_task in self._progress_tasks_by_checker.values():
+            progress_task.update(partial_result)
+
+    def update_check(self, checker: Checker, partial_result: bool | CheckResultType):
+        progress_task = self._progress_tasks_by_checker.get(id(checker))
+        if progress_task is None:
+            logger.warning(f"No progress task found for checker {checker}")
+            return
+        progress_task.update(partial_result)
+
+
 async def execute_checks(
     packages_to_install: list[InstallationReportItem], progress: SimpleTaskProgress
-) -> list[CheckResult]:
+) -> list[PackageCheckResults]:
     async with (
         aclosing(PypiClient()) as pypi_client,
         aclosing(RepoClient()) as repo_client,
@@ -154,20 +175,56 @@ async def execute_checks(
             ReleaseMetadataChecker(),
             LicenseChecker(),
         ]
+        check_progress_tracker = CheckProgressTracker(progress, checkers, len(packages_to_install))
 
-        releases_info_futures: list[Awaitable[VerifiedPypiReleaseInfo | None]] = [
-            asyncio.create_task(pypi_client.get_matching_release_info(package)) for package in packages_to_install
-        ]
-        check_result_futures = []
-        for checker in checkers:
-            progress_task = progress.add_task(checker.description, total=len(packages_to_install))
-            for package, releases_info_future in zip(packages_to_install, releases_info_futures):
-                check_result_future = asyncio.create_task(checker.check(package, releases_info_future))
-                check_result_future.add_done_callback(
-                    lambda f, task=progress_task: task.update(CheckResultType.from_result_future(f))
+        results_futures = []
+        for package in packages_to_install:
+            releases_info_future = asyncio.create_task(pypi_client.get_matching_release_info(package))
+            results_futures.append(
+                asyncio.create_task(
+                    execute_checks_for_one_package(
+                        package.metadata, releases_info_future, checkers, check_progress_tracker
+                    )
                 )
-                check_result_futures.append(check_result_future)
-        return await asyncio.gather(*check_result_futures)
+            )
+        return await asyncio.gather(*results_futures)
+
+
+async def execute_checks_for_one_package(
+    unverified_metadata: InstallationReportItemMetadata,
+    verified_release_info_future: Awaitable[VerifiedPypiReleaseInfo | None],
+    checkers: list[Checker],
+    check_progress_tracker: CheckProgressTracker,
+) -> PackageCheckResults:
+    release_info = await verified_release_info_future
+
+    if release_info is None:
+        # We don't have any trusted release information from PyPI available, we can't run any checks
+        result_type = CheckResultType.FAILURE
+        check_progress_tracker.update_all_checks(result_type)
+        check_result = CheckResult(
+            f"{unverified_metadata.name}=={unverified_metadata.version}",
+            result_type=result_type,
+            message="No release information available",
+            priority=0,
+        )
+        return PackageCheckResults(unverified_metadata.name, unverified_metadata.version, [check_result])
+
+    # We do have a trusted release info from PyPI, we can run checks
+    package = InstallationReportItem(  # TODO: remove - replace by pinned_requirement
+        metadata=unverified_metadata, download_info=None, requested=True, is_direct=True
+    )
+    check_futures = []
+    for checker in checkers:
+        result_future = asyncio.create_task(checker.check(package, verified_release_info_future))
+        result_future.add_done_callback(
+            lambda f, checker=checker: check_progress_tracker.update_check(
+                checker, CheckResultType.from_result_future(f)
+            )
+        )
+        check_futures.append(result_future)
+    check_results = await asyncio.gather(*check_futures)
+    return PackageCheckResults(unverified_metadata.name, unverified_metadata.version, check_results)
 
 
 if __name__ == "__main__":
