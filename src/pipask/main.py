@@ -29,7 +29,7 @@ from pipask.infra.pip import (
     pip_pass_through,
 )
 from pipask.infra.pip_report import InstallationReportItem, PipInstallReport
-from pipask.infra.pypi import PypiClient, ReleaseResponse
+from pipask.infra.pypi import PypiClient, VerifiedPypiReleaseInfo
 from pipask.infra.pypistats import PypiStatsClient
 from pipask.infra.repo_client import RepoClient
 from pipask.infra.vulnerability_details import OsvVulnerabilityDetailsService
@@ -155,7 +155,7 @@ async def execute_checks(
             LicenseChecker(),
         ]
 
-        releases_info_futures: list[Awaitable[ReleaseResponse | None]] = [
+        releases_info_futures: list[Awaitable[VerifiedPypiReleaseInfo | None]] = [
             asyncio.create_task(pypi_client.get_matching_release_info(package)) for package in packages_to_install
         ]
         check_result_futures = []

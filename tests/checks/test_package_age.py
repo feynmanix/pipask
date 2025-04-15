@@ -4,7 +4,14 @@ from unittest.mock import AsyncMock
 
 from pipask.checks.package_age import PackageAge
 from pipask.checks.types import CheckResult, CheckResultType
-from pipask.infra.pypi import ReleaseResponse, ProjectInfo, DistributionsResponse, Distribution, ProjectReleaseFile
+from pipask.infra.pypi import (
+    ReleaseResponse,
+    ProjectInfo,
+    DistributionsResponse,
+    Distribution,
+    ProjectReleaseFile,
+    VerifiedPypiReleaseInfo,
+)
 from pipask.infra.pip_report import (
     InstallationReportItem,
     InstallationReportItemDownloadInfo,
@@ -26,7 +33,11 @@ REPORT_ITEM = InstallationReportItem(
 async def test_no_distributions():
     pypi_client = AsyncMock()
     pypi_client.get_distributions.return_value = None
-    release_info_future = AsyncMock(return_value=None)
+    release_info_future = AsyncMock(
+        return_value=VerifiedPypiReleaseInfo(
+            ReleaseResponse(info=ProjectInfo(name=PACKAGE_NAME, version=PACKAGE_VERSION))
+        )
+    )
     checker = PackageAge(pypi_client)
 
     result = await checker.check(REPORT_ITEM, release_info_future())
@@ -35,6 +46,22 @@ async def test_no_distributions():
         pinned_requirement="package==1.0.0",
         result_type=CheckResultType.FAILURE,
         message="No distributions information available",
+        priority=PackageAge.priority,
+    )
+
+
+@pytest.mark.asyncio
+async def test_no_release_info():
+    pypi_client = AsyncMock()
+    release_info_future = AsyncMock(return_value=None)
+    checker = PackageAge(pypi_client)
+
+    result = await checker.check(REPORT_ITEM, release_info_future())
+
+    assert result == CheckResult(
+        pinned_requirement="package==1.0.0",
+        result_type=CheckResultType.FAILURE,
+        message="No release information available",
         priority=PackageAge.priority,
     )
 
@@ -53,7 +80,11 @@ async def test_too_new_package():
         ],
     )
     checker = PackageAge(pypi_client)
-    release_info_future = AsyncMock(return_value=None)
+    release_info_future = AsyncMock(
+        return_value=VerifiedPypiReleaseInfo(
+            ReleaseResponse(info=ProjectInfo(name=PACKAGE_NAME, version=PACKAGE_VERSION))
+        )
+    )
 
     result = await checker.check(REPORT_ITEM, release_info_future())
 
@@ -85,18 +116,20 @@ async def test_too_old_release():
     )
     checker = PackageAge(pypi_client)
     release_info_future = AsyncMock(
-        return_value=ReleaseResponse(
-            info=ProjectInfo(
-                name=PACKAGE_NAME,
-                version=PACKAGE_VERSION,
-            ),
-            urls=[
-                ProjectReleaseFile(
-                    filename="package-1.0.0.tar.gz",
-                    upload_time_iso_8601=now - datetime.timedelta(days=400),
-                    yanked=False,
-                )
-            ],
+        return_value=VerifiedPypiReleaseInfo(
+            ReleaseResponse(
+                info=ProjectInfo(
+                    name=PACKAGE_NAME,
+                    version=PACKAGE_VERSION,
+                ),
+                urls=[
+                    ProjectReleaseFile(
+                        filename="package-1.0.0.tar.gz",
+                        upload_time_iso_8601=now - datetime.timedelta(days=400),
+                        yanked=False,
+                    )
+                ],
+            )
         )
     )
 
@@ -131,18 +164,20 @@ async def test_successful_check():
     )
     checker = PackageAge(pypi_client)
     release_info_future = AsyncMock(
-        return_value=ReleaseResponse(
-            info=ProjectInfo(
-                name=PACKAGE_NAME,
-                version=PACKAGE_VERSION,
-            ),
-            urls=[
-                ProjectReleaseFile(
-                    filename="package-2.0.0.tar.gz",
-                    upload_time_iso_8601=now - datetime.timedelta(days=1),
-                    yanked=False,
-                )
-            ],
+        return_value=VerifiedPypiReleaseInfo(
+            ReleaseResponse(
+                info=ProjectInfo(
+                    name=PACKAGE_NAME,
+                    version=PACKAGE_VERSION,
+                ),
+                urls=[
+                    ProjectReleaseFile(
+                        filename="package-2.0.0.tar.gz",
+                        upload_time_iso_8601=now - datetime.timedelta(days=1),
+                        yanked=False,
+                    )
+                ],
+            )
         )
     )
 

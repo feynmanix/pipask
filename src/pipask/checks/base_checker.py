@@ -3,13 +3,13 @@ from typing import Awaitable
 
 from pipask.checks.types import CheckResult
 from pipask.infra.pip_report import InstallationReportItem
-from pipask.infra.pypi import ReleaseResponse
+from pipask.infra.pypi import VerifiedPypiReleaseInfo
 
 
 class Checker(abc.ABC):
     @abc.abstractmethod
     async def check(
-        self, package: InstallationReportItem, release_info_future: Awaitable[ReleaseResponse | None]
+        self, package: InstallationReportItem, verified_release_info_future: Awaitable[VerifiedPypiReleaseInfo | None]
     ) -> "CheckResult":
         pass
 

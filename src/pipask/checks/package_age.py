@@ -1,7 +1,7 @@
 import datetime
 from typing import Awaitable
 
-from pipask.infra.pypi import ReleaseResponse, PypiClient
+from pipask.infra.pypi import PypiClient, VerifiedPypiReleaseInfo
 from pipask.checks.types import CheckResult, CheckResultType
 from pipask.checks.base_checker import Checker
 from pipask.infra.pip_report import InstallationReportItem
@@ -21,11 +21,18 @@ class PackageAge(Checker):
         return "Checking package age"
 
     async def check(
-        self, package: InstallationReportItem, release_info_future: Awaitable[ReleaseResponse | None]
+        self, package: InstallationReportItem, verified_release_info_future: Awaitable[VerifiedPypiReleaseInfo | None]
     ) -> CheckResult:
         pkg = package.pinned_requirement
-
-        distributions = await self._pypi_client.get_distributions(package.metadata.name)
+        verified_release_info = await verified_release_info_future
+        if verified_release_info is None:
+            return CheckResult(
+                pkg,
+                result_type=CheckResultType.FAILURE,
+                message="No release information available",
+                priority=self.priority,
+            )
+        distributions = await self._pypi_client.get_distributions(verified_release_info.name)
         if distributions is None:
             return CheckResult(
                 pkg,
@@ -43,15 +50,7 @@ class PackageAge(Checker):
                 priority=self.priority,
             )
 
-        resolved_release_info = await release_info_future
-        if resolved_release_info is None:
-            return CheckResult(
-                pkg,
-                result_type=CheckResultType.FAILURE,
-                message="No release information available",
-                priority=self.priority,
-            )
-        newest_release_file = max(resolved_release_info.urls, key=lambda x: x.upload_time)
+        newest_release_file = max(verified_release_info.release_response.urls, key=lambda x: x.upload_time)
         release_age_days = (datetime.datetime.now(datetime.timezone.utc) - newest_release_file.upload_time).days
         if release_age_days > _TOO_OLD_DAYS:
             return CheckResult(

@@ -3,7 +3,7 @@ from unittest.mock import AsyncMock
 
 from pipask.checks.release_metadata import ReleaseMetadataChecker
 from pipask.checks.types import CheckResultType
-from pipask.infra.pypi import ReleaseResponse, ProjectInfo
+from pipask.infra.pypi import ReleaseResponse, ProjectInfo, VerifiedPypiReleaseInfo
 from pipask.infra.pip_report import (
     InstallationReportItem,
     InstallationReportItemDownloadInfo,
@@ -27,19 +27,23 @@ REPORT_ITEM = InstallationReportItem(
     [
         (None, CheckResultType.FAILURE, "No release information available"),
         (
-            ReleaseResponse(
-                info=ProjectInfo(
-                    name=PACKAGE_NAME,
-                    version=PACKAGE_VERSION,
-                    yanked=True,
-                    yanked_reason="Security vulnerability",
+            VerifiedPypiReleaseInfo(
+                ReleaseResponse(
+                    info=ProjectInfo(
+                        name=PACKAGE_NAME,
+                        version=PACKAGE_VERSION,
+                        yanked=True,
+                        yanked_reason="Security vulnerability",
+                    )
                 )
             ),
             CheckResultType.FAILURE,
             "The release is yanked (reason: Security vulnerability)",
         ),
         (
-            ReleaseResponse(info=ProjectInfo(name=PACKAGE_NAME, version=PACKAGE_VERSION, yanked=True)),
+            VerifiedPypiReleaseInfo(
+                ReleaseResponse(info=ProjectInfo(name=PACKAGE_NAME, version=PACKAGE_VERSION, yanked=True)),
+            ),
             CheckResultType.FAILURE,
             "The release is yanked",
         ),
@@ -69,12 +73,14 @@ async def test_release_info_checks(release_info, expected_type, expected_message
 async def test_warning_classifiers(classifier):
     checker = ReleaseMetadataChecker()
     release_info = AsyncMock(
-        return_value=ReleaseResponse(
-            info=ProjectInfo(
-                name=PACKAGE_NAME,
-                version=PACKAGE_VERSION,
-                yanked=False,
-                classifiers=["License :: OSI Approved :: MIT License", classifier],
+        return_value=VerifiedPypiReleaseInfo(
+            ReleaseResponse(
+                info=ProjectInfo(
+                    name=PACKAGE_NAME,
+                    version=PACKAGE_VERSION,
+                    yanked=False,
+                    classifiers=["License :: OSI Approved :: MIT License", classifier],
+                )
             )
         )
     )
@@ -96,12 +102,14 @@ async def test_warning_classifiers(classifier):
 async def test_success_classifiers(classifier):
     checker = ReleaseMetadataChecker()
     release_info = AsyncMock(
-        return_value=ReleaseResponse(
-            info=ProjectInfo(
-                name=PACKAGE_NAME,
-                version=PACKAGE_VERSION,
-                yanked=False,
-                classifiers=[classifier] if classifier else [],
+        return_value=VerifiedPypiReleaseInfo(
+            ReleaseResponse(
+                info=ProjectInfo(
+                    name=PACKAGE_NAME,
+                    version=PACKAGE_VERSION,
+                    yanked=False,
+                    classifiers=[classifier] if classifier else [],
+                )
             )
         )
     )
@@ -117,7 +125,11 @@ async def test_success_classifiers(classifier):
 @pytest.mark.asyncio
 async def test_no_classifiers():
     checker = ReleaseMetadataChecker()
-    release_info = AsyncMock(return_value=ReleaseResponse(info=ProjectInfo(name=PACKAGE_NAME, version=PACKAGE_VERSION)))
+    release_info = AsyncMock(
+        return_value=VerifiedPypiReleaseInfo(
+            ReleaseResponse(info=ProjectInfo(name=PACKAGE_NAME, version=PACKAGE_VERSION))
+        )
+    )
 
     result = await checker.check(REPORT_ITEM, release_info())
 
