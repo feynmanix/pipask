@@ -30,8 +30,8 @@ from pipask.infra.pip import (
     parse_pip_install_arguments,
     pip_pass_through,
 )
-from pipask.infra.pip_report import InstallationReportItem, PipInstallReport
-from pipask.infra.pypi import PypiClient
+from pipask.infra.pip_report import InstallationReportItem, InstallationReportItemMetadata, PipInstallReport
+from pipask.infra.pypi import PypiClient, VerifiedPypiReleaseInfo
 from pipask.infra.pypistats import PypiStatsClient
 from pipask.infra.repo_client import RepoClient
 from pipask.infra.vulnerability_details import OsvVulnerabilityDetailsService
@@ -211,32 +211,57 @@ class ChecksExecutor:
 
         if release_info is None:
             # We don't have any trusted release information from PyPI available, we can't run any checks
-            result_type = CheckResultType.FAILURE
-            check_progress_tracker.update_all_checks(result_type)
-            check_result = CheckResult(
-                f"{unverified_metadata.metadata.name}=={unverified_metadata.metadata.version}",
-                result_type=result_type,
-                message="No release information available",
-                priority=0,
-            )
+            check_progress_tracker.update_all_checks(CheckResultType.FAILURE)
             return PackageCheckResults(
-                unverified_metadata.metadata.name, unverified_metadata.metadata.version, [check_result]
+                unverified_metadata.metadata.name,
+                unverified_metadata.metadata.version,
+                [
+                    CheckResult(
+                        f"{unverified_metadata.metadata.name}=={unverified_metadata.metadata.version}",
+                        result_type=(CheckResultType.FAILURE),
+                        message="No release information available",
+                        priority=0,
+                    )
+                ],
             )
 
         # We do have a trusted release info from PyPI, we can run checks
-        check_futures = []
-        for checker in self._checkers:
-            result_future = asyncio.create_task(checker.check(unverified_metadata, release_info))
-            result_future.add_done_callback(
-                lambda f, checker=checker: check_progress_tracker.update_check(
-                    checker, CheckResultType.from_result_future(f)
-                )
-            )
-            check_futures.append(result_future)
-        check_results = await asyncio.gather(*check_futures)
+        check_results = await asyncio.gather(
+            *[self._run_one_check(checker, release_info, check_progress_tracker) for checker in self._checkers]
+        )
         return PackageCheckResults(
             unverified_metadata.metadata.name, unverified_metadata.metadata.version, check_results
         )
+
+    async def _run_one_check(
+        self, checker: Checker, release_info: VerifiedPypiReleaseInfo, check_progress_tracker: _CheckProgressTracker
+    ) -> CheckResult:
+        try:
+            package = InstallationReportItem(  # TODO
+                metadata=InstallationReportItemMetadata(
+                    name=release_info.name,
+                    version=release_info.version,
+                ),
+                download_info=None,
+                requested=True,
+                is_direct=True,
+                is_yanked=False,
+            )
+            result = await checker.check(package, release_info)
+            check_progress_tracker.update_check(checker, result.result_type)
+            return result
+        except Exception as e:
+            logger.debug(
+                f"Error running {checker.__class__.__name__} for {release_info.name}=={release_info.version}",
+                exc_info=True,
+            )
+            check_progress_tracker.update_check(checker, CheckResultType.FAILURE)
+            return CheckResult(
+                f"{release_info.name}=={release_info.version}",
+                result_type=CheckResultType.FAILURE,
+                message=f"Check failed: {str(e)}",
+                priority=0,  # TODO
+            )
 
 
 if __name__ == "__main__":
