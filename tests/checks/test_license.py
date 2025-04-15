@@ -2,22 +2,10 @@ import pytest
 
 from pipask.checks.license import LicenseChecker
 from pipask.checks.types import CheckResultType
-from pipask.infra.pip_report import (
-    InstallationReportItem,
-    InstallationReportItemDownloadInfo,
-    InstallationReportItemMetadata,
-)
 from pipask.infra.pypi import ProjectInfo, ReleaseResponse, VerifiedPypiReleaseInfo
 
 PACKAGE_NAME = "package"
 PACKAGE_VERSION = "1.0.0"
-REPORT_ITEM = InstallationReportItem(
-    metadata=InstallationReportItemMetadata(name=PACKAGE_NAME, version=PACKAGE_VERSION),
-    download_info=InstallationReportItemDownloadInfo(url="https://example.com"),
-    requested=True,
-    is_yanked=False,
-    is_direct=True,
-)
 
 
 @pytest.mark.asyncio
@@ -49,7 +37,7 @@ async def test_license_classifiers(classifiers: list[str], metadata_license: str
         )
     )
 
-    result = await checker.check(REPORT_ITEM, release_info)
+    result = await checker.check(release_info)
 
     assert result.result_type == CheckResultType.NEUTRAL
     assert result.message == expected_message
@@ -69,7 +57,7 @@ async def test_no_license():
         )
     )
 
-    result = await checker.check(REPORT_ITEM, release_info)
+    result = await checker.check(release_info)
 
     assert result.result_type == CheckResultType.WARNING
     assert result.message == "No license found in PyPI metadata - you may need to check manually"

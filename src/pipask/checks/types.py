@@ -1,7 +1,6 @@
-from enum import Enum
 from dataclasses import dataclass
+from enum import Enum
 from typing import Optional
-from asyncio import Future
 
 
 class CheckResultType(str, Enum):
@@ -35,19 +34,10 @@ class CheckResultType(str, Enum):
             return CheckResultType.SUCCESS
         return None
 
-    @staticmethod
-    def from_result_future(future: Future["CheckResult"]) -> "CheckResultType":
-        if future.cancelled() or future.exception():
-            return CheckResultType.ERROR
-        return future.result().result_type
-
-
 @dataclass
 class CheckResult:
-    pinned_requirement: str
     result_type: CheckResultType
     message: str
-    priority: int
 
 
 @dataclass

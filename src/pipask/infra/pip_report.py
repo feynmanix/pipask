@@ -34,10 +34,6 @@ class InstallationReportItem(BaseModel):
     is_direct: bool
     is_yanked: bool = False
 
-    @property
-    def pinned_requirement(self) -> str:
-        return f"{self.metadata.name}=={self.metadata.version}"
-
 
 class PipInstallReport(BaseModel):
     version: str

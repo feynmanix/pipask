@@ -2,22 +2,10 @@ import pytest
 
 from pipask.checks.release_metadata import ReleaseMetadataChecker
 from pipask.checks.types import CheckResultType
-from pipask.infra.pip_report import (
-    InstallationReportItem,
-    InstallationReportItemDownloadInfo,
-    InstallationReportItemMetadata,
-)
 from pipask.infra.pypi import ProjectInfo, ReleaseResponse, VerifiedPypiReleaseInfo
 
 PACKAGE_NAME = "package"
 PACKAGE_VERSION = "1.0.0"
-REPORT_ITEM = InstallationReportItem(
-    metadata=InstallationReportItemMetadata(name=PACKAGE_NAME, version=PACKAGE_VERSION),
-    download_info=InstallationReportItemDownloadInfo(url="https://example.com"),
-    requested=True,
-    is_yanked=False,
-    is_direct=True,
-)
 
 
 @pytest.mark.asyncio
@@ -50,7 +38,7 @@ REPORT_ITEM = InstallationReportItem(
 async def test_release_info_checks(release_info, expected_type, expected_message):
     checker = ReleaseMetadataChecker()
 
-    result = await checker.check(REPORT_ITEM, release_info)
+    result = await checker.check(release_info)
 
     assert result.result_type == expected_type
     assert result.message == expected_message
@@ -80,7 +68,7 @@ async def test_warning_classifiers(classifier):
         )
     )
 
-    result = await checker.check(REPORT_ITEM, release_info)
+    result = await checker.check(release_info)
 
     assert result.result_type == CheckResultType.WARNING
     assert result.message == f"Package is classified as {classifier}"
@@ -107,7 +95,7 @@ async def test_success_classifiers(classifier):
         )
     )
 
-    result = await checker.check(REPORT_ITEM, release_info)
+    result = await checker.check(release_info)
 
     assert result.result_type == CheckResultType.SUCCESS
     assert result.message == (
@@ -122,7 +110,7 @@ async def test_no_classifiers():
         ReleaseResponse(info=ProjectInfo(name=PACKAGE_NAME, version=PACKAGE_VERSION))
     )
 
-    result = await checker.check(REPORT_ITEM, release_info)
+    result = await checker.check(release_info)
 
     assert result.result_type == CheckResultType.NEUTRAL
     assert result.message == "No development status classifiers"

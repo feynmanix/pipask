@@ -1,17 +1,14 @@
 import datetime
 
-from pipask.infra.pypi import PypiClient, VerifiedPypiReleaseInfo
-from pipask.checks.types import CheckResult, CheckResultType
 from pipask.checks.base_checker import Checker
-from pipask.infra.pip_report import InstallationReportItem
+from pipask.checks.types import CheckResult, CheckResultType
+from pipask.infra.pypi import PypiClient, VerifiedPypiReleaseInfo
 
 _TOO_NEW_DAYS = 22
 _TOO_OLD_DAYS = 365
 
 
 class PackageAge(Checker):
-    priority = 30
-
     def __init__(self, pypi_client: PypiClient):
         self._pypi_client = pypi_client
 
@@ -19,40 +16,29 @@ class PackageAge(Checker):
     def description(self) -> str:
         return "Checking package age"
 
-    async def check(
-        self, package: InstallationReportItem, verified_release_info: VerifiedPypiReleaseInfo
-    ) -> CheckResult:
-        pkg = package.pinned_requirement
+    async def check(self, verified_release_info: VerifiedPypiReleaseInfo) -> CheckResult:
         distributions = await self._pypi_client.get_distributions(verified_release_info.name)
         if distributions is None:
             return CheckResult(
-                pkg,
                 result_type=CheckResultType.FAILURE,
                 message="No distributions information available",
-                priority=self.priority,
             )
         oldest_distribution = min(distributions.files, key=lambda x: x.upload_time)
         max_age_days = (datetime.datetime.now(datetime.timezone.utc) - oldest_distribution.upload_time).days
         if max_age_days < _TOO_NEW_DAYS:
             return CheckResult(
-                pkg,
                 result_type=CheckResultType.WARNING,
                 message=f"A newly published package: created only {max_age_days} days ago",
-                priority=self.priority,
             )
 
         newest_release_file = max(verified_release_info.release_response.urls, key=lambda x: x.upload_time)
         release_age_days = (datetime.datetime.now(datetime.timezone.utc) - newest_release_file.upload_time).days
         if release_age_days > _TOO_OLD_DAYS:
             return CheckResult(
-                pkg,
                 result_type=CheckResultType.WARNING,
                 message=f"The release is older than a year: {release_age_days} days old",
-                priority=self.priority,
             )
         return CheckResult(
-            pkg,
             result_type=CheckResultType.SUCCESS,
             message=f"The release is {release_age_days} day{'' if release_age_days == 1 else 's'} old",
-            priority=self.priority,
         )
