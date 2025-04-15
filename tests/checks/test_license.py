@@ -1,14 +1,13 @@
 import pytest
-from unittest.mock import AsyncMock
 
 from pipask.checks.license import LicenseChecker
 from pipask.checks.types import CheckResultType
-from pipask.infra.pypi import ReleaseResponse, ProjectInfo, VerifiedPypiReleaseInfo
 from pipask.infra.pip_report import (
     InstallationReportItem,
     InstallationReportItemDownloadInfo,
     InstallationReportItemMetadata,
 )
+from pipask.infra.pypi import ProjectInfo, ReleaseResponse, VerifiedPypiReleaseInfo
 
 PACKAGE_NAME = "package"
 PACKAGE_VERSION = "1.0.0"
@@ -19,17 +18,6 @@ REPORT_ITEM = InstallationReportItem(
     is_yanked=False,
     is_direct=True,
 )
-
-
-@pytest.mark.asyncio
-async def test_no_release_info():
-    checker = LicenseChecker()
-    release_info_future = AsyncMock(return_value=None)
-
-    result = await checker.check(REPORT_ITEM, release_info_future())
-
-    assert result.result_type == CheckResultType.FAILURE
-    assert result.message == "No release information available"
 
 
 @pytest.mark.asyncio
@@ -50,20 +38,18 @@ async def test_no_release_info():
 )
 async def test_license_classifiers(classifiers: list[str], metadata_license: str, expected_message: str):
     checker = LicenseChecker()
-    release_info_future = AsyncMock(
-        return_value=VerifiedPypiReleaseInfo(
-            ReleaseResponse(
-                info=ProjectInfo(
-                    name=PACKAGE_NAME,
-                    version=PACKAGE_VERSION,
-                    classifiers=classifiers,
-                    license=metadata_license,
-                )
+    release_info = VerifiedPypiReleaseInfo(
+        ReleaseResponse(
+            info=ProjectInfo(
+                name=PACKAGE_NAME,
+                version=PACKAGE_VERSION,
+                classifiers=classifiers,
+                license=metadata_license,
             )
         )
     )
 
-    result = await checker.check(REPORT_ITEM, release_info_future())
+    result = await checker.check(REPORT_ITEM, release_info)
 
     assert result.result_type == CheckResultType.NEUTRAL
     assert result.message == expected_message
@@ -72,20 +58,18 @@ async def test_license_classifiers(classifiers: list[str], metadata_license: str
 @pytest.mark.asyncio
 async def test_no_license():
     checker = LicenseChecker()
-    release_info_future = AsyncMock(
-        return_value=VerifiedPypiReleaseInfo(
-            ReleaseResponse(
-                info=ProjectInfo(
-                    name=PACKAGE_NAME,
-                    version=PACKAGE_VERSION,
-                    classifiers=[],
-                    license=None,
-                )
+    release_info = VerifiedPypiReleaseInfo(
+        ReleaseResponse(
+            info=ProjectInfo(
+                name=PACKAGE_NAME,
+                version=PACKAGE_VERSION,
+                classifiers=[],
+                license=None,
             )
         )
     )
 
-    result = await checker.check(REPORT_ITEM, release_info_future())
+    result = await checker.check(REPORT_ITEM, release_info)
 
     assert result.result_type == CheckResultType.WARNING
     assert result.message == "No license found in PyPI metadata - you may need to check manually"

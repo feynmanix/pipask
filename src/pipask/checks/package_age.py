@@ -1,5 +1,4 @@
 import datetime
-from typing import Awaitable
 
 from pipask.infra.pypi import PypiClient, VerifiedPypiReleaseInfo
 from pipask.checks.types import CheckResult, CheckResultType
@@ -21,17 +20,9 @@ class PackageAge(Checker):
         return "Checking package age"
 
     async def check(
-        self, package: InstallationReportItem, verified_release_info_future: Awaitable[VerifiedPypiReleaseInfo | None]
+        self, package: InstallationReportItem, verified_release_info: VerifiedPypiReleaseInfo
     ) -> CheckResult:
         pkg = package.pinned_requirement
-        verified_release_info = await verified_release_info_future
-        if verified_release_info is None:
-            return CheckResult(
-                pkg,
-                result_type=CheckResultType.FAILURE,
-                message="No release information available",
-                priority=self.priority,
-            )
         distributions = await self._pypi_client.get_distributions(verified_release_info.name)
         if distributions is None:
             return CheckResult(

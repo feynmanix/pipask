@@ -3,7 +3,6 @@ import logging
 import os
 import sys
 from contextlib import aclosing
-from typing import Awaitable
 
 from httpx import HTTPError
 from rich import traceback as rich_traceback
@@ -31,8 +30,8 @@ from pipask.infra.pip import (
     parse_pip_install_arguments,
     pip_pass_through,
 )
-from pipask.infra.pip_report import InstallationReportItem, InstallationReportItemMetadata, PipInstallReport
-from pipask.infra.pypi import PypiClient, VerifiedPypiReleaseInfo
+from pipask.infra.pip_report import InstallationReportItem, PipInstallReport
+from pipask.infra.pypi import PypiClient
 from pipask.infra.pypistats import PypiStatsClient
 from pipask.infra.repo_client import RepoClient
 from pipask.infra.vulnerability_details import OsvVulnerabilityDetailsService
@@ -167,7 +166,7 @@ async def execute_checks(
         aclosing(PypiStatsClient()) as pypi_stats_client,
         aclosing(OsvVulnerabilityDetailsService()) as vulnerability_details_service,
     ):
-        checkers = [
+        checkers: list[Checker] = [
             RepoPopularityChecker(repo_client),
             PackageDownloadsChecker(pypi_stats_client),
             PackageAge(pypi_client),
@@ -177,54 +176,44 @@ async def execute_checks(
         ]
         check_progress_tracker = CheckProgressTracker(progress, checkers, len(packages_to_install))
 
-        results_futures = []
-        for package in packages_to_install:
-            releases_info_future = asyncio.create_task(pypi_client.get_matching_release_info(package))
-            results_futures.append(
-                asyncio.create_task(
-                    execute_checks_for_one_package(
-                        package.metadata, releases_info_future, checkers, check_progress_tracker
+        async def check_package(
+            unverified_metadata: InstallationReportItem,
+        ) -> PackageCheckResults:
+            release_info = await pypi_client.get_matching_release_info(unverified_metadata)
+
+            if release_info is None:
+                # We don't have any trusted release information from PyPI available, we can't run any checks
+                result_type = CheckResultType.FAILURE
+                check_progress_tracker.update_all_checks(result_type)
+                check_result = CheckResult(
+                    f"{unverified_metadata.metadata.name}=={unverified_metadata.metadata.version}",
+                    result_type=result_type,
+                    message="No release information available",
+                    priority=0,
+                )
+                return PackageCheckResults(
+                    unverified_metadata.metadata.name, unverified_metadata.metadata.version, [check_result]
+                )
+
+            # We do have a trusted release info from PyPI, we can run checks
+            check_futures = []
+            for checker in checkers:
+                result_future = asyncio.create_task(checker.check(package, release_info))
+                result_future.add_done_callback(
+                    lambda f, checker=checker: check_progress_tracker.update_check(
+                        checker, CheckResultType.from_result_future(f)
                     )
                 )
+                check_futures.append(result_future)
+            check_results = await asyncio.gather(*check_futures)
+            return PackageCheckResults(
+                unverified_metadata.metadata.name, unverified_metadata.metadata.version, check_results
             )
+
+        results_futures = []
+        for package in packages_to_install:
+            results_futures.append(asyncio.create_task(check_package(package)))
         return await asyncio.gather(*results_futures)
-
-
-async def execute_checks_for_one_package(
-    unverified_metadata: InstallationReportItemMetadata,
-    verified_release_info_future: Awaitable[VerifiedPypiReleaseInfo | None],
-    checkers: list[Checker],
-    check_progress_tracker: CheckProgressTracker,
-) -> PackageCheckResults:
-    release_info = await verified_release_info_future
-
-    if release_info is None:
-        # We don't have any trusted release information from PyPI available, we can't run any checks
-        result_type = CheckResultType.FAILURE
-        check_progress_tracker.update_all_checks(result_type)
-        check_result = CheckResult(
-            f"{unverified_metadata.name}=={unverified_metadata.version}",
-            result_type=result_type,
-            message="No release information available",
-            priority=0,
-        )
-        return PackageCheckResults(unverified_metadata.name, unverified_metadata.version, [check_result])
-
-    # We do have a trusted release info from PyPI, we can run checks
-    package = InstallationReportItem(  # TODO: remove - replace by pinned_requirement
-        metadata=unverified_metadata, download_info=None, requested=True, is_direct=True
-    )
-    check_futures = []
-    for checker in checkers:
-        result_future = asyncio.create_task(checker.check(package, verified_release_info_future))
-        result_future.add_done_callback(
-            lambda f, checker=checker: check_progress_tracker.update_check(
-                checker, CheckResultType.from_result_future(f)
-            )
-        )
-        check_futures.append(result_future)
-    check_results = await asyncio.gather(*check_futures)
-    return PackageCheckResults(unverified_metadata.name, unverified_metadata.version, check_results)
 
 
 if __name__ == "__main__":

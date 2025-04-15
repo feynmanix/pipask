@@ -46,7 +46,7 @@ async def test_no_vulnerabilities(checker, sample_package):
     release_info = VerifiedPypiReleaseInfo(
         ReleaseResponse(info=ProjectInfo(**sample_package.metadata.model_dump()), vulnerabilities=[])
     )
-    result = await checker.check(sample_package, AsyncMock(return_value=release_info)())
+    result = await checker.check(sample_package, release_info)
 
     assert result == CheckResult(
         pinned_requirement=sample_package.pinned_requirement,
@@ -103,7 +103,7 @@ async def test_single_vulnerability(
         id="CVE-2023-1234", severity=severity, link="https://example.com/cve-2023-1234"
     )
 
-    result = await checker.check(sample_package, AsyncMock(return_value=release_info)())
+    result = await checker.check(sample_package, release_info)
 
     assert result == CheckResult(
         pinned_requirement=sample_package.pinned_requirement,
@@ -125,22 +125,10 @@ async def test_withdrawn_vulnerability(checker, sample_package):
         ReleaseResponse(info=ProjectInfo(**sample_package.metadata.model_dump()), vulnerabilities=[vuln])
     )
 
-    result = await checker.check(sample_package, AsyncMock(return_value=release_info)())
+    result = await checker.check(sample_package, release_info)
 
     assert result.result_type == CheckResultType.SUCCESS
     assert "No known vulnerabilities found" in result.message
-
-
-@pytest.mark.asyncio
-async def test_no_release_info(checker, sample_package):
-    result = await checker.check(sample_package, AsyncMock(return_value=None)())
-
-    assert result == CheckResult(
-        pinned_requirement=sample_package.pinned_requirement,
-        result_type=CheckResultType.FAILURE,
-        message="No release information available",
-        priority=ReleaseVulnerabilityChecker.priority,
-    )
 
 
 @pytest.mark.asyncio
@@ -161,7 +149,7 @@ async def test_multiple_vulnerabilities(checker, sample_package, vulnerability_d
 
     vulnerability_details_service.get_details.side_effect = lambda vuln: details_map[vuln.id]
 
-    result = await checker.check(sample_package, AsyncMock(return_value=release_info)())
+    result = await checker.check(sample_package, release_info)
 
     assert result == CheckResult(
         pinned_requirement=sample_package.pinned_requirement,

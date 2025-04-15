@@ -1,14 +1,13 @@
 import pytest
-from unittest.mock import AsyncMock
 
 from pipask.checks.release_metadata import ReleaseMetadataChecker
 from pipask.checks.types import CheckResultType
-from pipask.infra.pypi import ReleaseResponse, ProjectInfo, VerifiedPypiReleaseInfo
 from pipask.infra.pip_report import (
     InstallationReportItem,
     InstallationReportItemDownloadInfo,
     InstallationReportItemMetadata,
 )
+from pipask.infra.pypi import ProjectInfo, ReleaseResponse, VerifiedPypiReleaseInfo
 
 PACKAGE_NAME = "package"
 PACKAGE_VERSION = "1.0.0"
@@ -25,7 +24,6 @@ REPORT_ITEM = InstallationReportItem(
 @pytest.mark.parametrize(
     "release_info,expected_type,expected_message",
     [
-        (None, CheckResultType.FAILURE, "No release information available"),
         (
             VerifiedPypiReleaseInfo(
                 ReleaseResponse(
@@ -51,9 +49,8 @@ REPORT_ITEM = InstallationReportItem(
 )
 async def test_release_info_checks(release_info, expected_type, expected_message):
     checker = ReleaseMetadataChecker()
-    release_info_future = AsyncMock(return_value=release_info)
 
-    result = await checker.check(REPORT_ITEM, release_info_future())
+    result = await checker.check(REPORT_ITEM, release_info)
 
     assert result.result_type == expected_type
     assert result.message == expected_message
@@ -72,20 +69,18 @@ async def test_release_info_checks(release_info, expected_type, expected_message
 )
 async def test_warning_classifiers(classifier):
     checker = ReleaseMetadataChecker()
-    release_info = AsyncMock(
-        return_value=VerifiedPypiReleaseInfo(
-            ReleaseResponse(
-                info=ProjectInfo(
-                    name=PACKAGE_NAME,
-                    version=PACKAGE_VERSION,
-                    yanked=False,
-                    classifiers=["License :: OSI Approved :: MIT License", classifier],
-                )
+    release_info = VerifiedPypiReleaseInfo(
+        ReleaseResponse(
+            info=ProjectInfo(
+                name=PACKAGE_NAME,
+                version=PACKAGE_VERSION,
+                yanked=False,
+                classifiers=["License :: OSI Approved :: MIT License", classifier],
             )
         )
     )
 
-    result = await checker.check(REPORT_ITEM, release_info())
+    result = await checker.check(REPORT_ITEM, release_info)
 
     assert result.result_type == CheckResultType.WARNING
     assert result.message == f"Package is classified as {classifier}"
@@ -101,20 +96,18 @@ async def test_warning_classifiers(classifier):
 )
 async def test_success_classifiers(classifier):
     checker = ReleaseMetadataChecker()
-    release_info = AsyncMock(
-        return_value=VerifiedPypiReleaseInfo(
-            ReleaseResponse(
-                info=ProjectInfo(
-                    name=PACKAGE_NAME,
-                    version=PACKAGE_VERSION,
-                    yanked=False,
-                    classifiers=[classifier] if classifier else [],
-                )
+    release_info = VerifiedPypiReleaseInfo(
+        ReleaseResponse(
+            info=ProjectInfo(
+                name=PACKAGE_NAME,
+                version=PACKAGE_VERSION,
+                yanked=False,
+                classifiers=[classifier] if classifier else [],
             )
         )
     )
 
-    result = await checker.check(REPORT_ITEM, release_info())
+    result = await checker.check(REPORT_ITEM, release_info)
 
     assert result.result_type == CheckResultType.SUCCESS
     assert result.message == (
@@ -125,13 +118,11 @@ async def test_success_classifiers(classifier):
 @pytest.mark.asyncio
 async def test_no_classifiers():
     checker = ReleaseMetadataChecker()
-    release_info = AsyncMock(
-        return_value=VerifiedPypiReleaseInfo(
-            ReleaseResponse(info=ProjectInfo(name=PACKAGE_NAME, version=PACKAGE_VERSION))
-        )
+    release_info = VerifiedPypiReleaseInfo(
+        ReleaseResponse(info=ProjectInfo(name=PACKAGE_NAME, version=PACKAGE_VERSION))
     )
 
-    result = await checker.check(REPORT_ITEM, release_info())
+    result = await checker.check(REPORT_ITEM, release_info)
 
     assert result.result_type == CheckResultType.NEUTRAL
     assert result.message == "No development status classifiers"
