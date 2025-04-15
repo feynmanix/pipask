@@ -1,4 +1,5 @@
 import logging
+from dataclasses import dataclass
 from datetime import datetime
 from typing import List, Optional, Tuple
 
@@ -144,6 +145,25 @@ def _project_info_url(project_name: str) -> str:
     return f"{_pypi_url}/{project_name}/json"
 
 
+@dataclass
+class VerifiedPypiReleaseInfo:
+    """
+    Pointer to a release on PyPI that has been verified to match a distribution file
+    either through download URL or hash.
+    This is so that we can enforce checking the identity of the package through static typing.
+    """
+
+    release_response: ReleaseResponse
+
+    @property
+    def name(self) -> str:
+        return self.release_response.info.name
+
+    @property
+    def version(self) -> str:
+        return self.release_response.info.version
+
+
 class PypiClient:
     def __init__(self, transport: AsyncBaseTransport | None = None):
         self.client = httpx.AsyncClient(follow_redirects=True, transport=transport)
@@ -157,13 +177,15 @@ class PypiClient:
         # Private to avoid calling this without the checks in get__matching_release_info()
         return await simple_get_request(_release_info_url(project_name, version), self.client, ReleaseResponse)
 
-    async def get_matching_release_info(self, package: InstallationReportItem) -> ReleaseResponse | None:
+    async def get_matching_release_info(self, package: InstallationReportItem) -> VerifiedPypiReleaseInfo | None:
         if package.download_info is None:
             # We don't know where the package is from,
             # could be a different thing than a package of the same name in PyPI
             return None
 
-        pypi_release_info = await self._get_release_info(package.metadata.name, package.metadata.version)
+        name = package.metadata.name
+        version = package.metadata.version
+        pypi_release_info = await self._get_release_info(name, version)
         if pypi_release_info is None:
             # Nothing to report anyway
             return None
@@ -172,7 +194,7 @@ class PypiClient:
 
         if package.download_info.url.startswith(PyPI.simple_url):
             # The package is from PyPI, so we can get the metadata directly
-            return pypi_release_info
+            return VerifiedPypiReleaseInfo(pypi_release_info)
         elif package.download_info.archive_info is not None and package.download_info.archive_info.hashes is not None:
             # Not from PyPI, but we can check if the hash matches PyPI (this will match, e.g., for index proxies)
             acceptable_hashes: set[Tuple[str, str]] = {
@@ -182,10 +204,10 @@ class PypiClient:
             for package_hash in package_hashes:
                 if package_hash in acceptable_hashes:
                     # We have a match, the metadata can be used
-                    logger.debug(f"\n\nHash of package {package.metadata.name} matches a PyPI release hash\n\n")
-                    return pypi_release_info
+                    logger.debug(f"\n\nHash of package {name} matches a PyPI release hash\n\n")
+                    return VerifiedPypiReleaseInfo(pypi_release_info)
         # No match found, we cannot reliably say the PyPI metadata belong to the package
-        logger.debug(f"Hash of package {package.metadata.name} does not match any PyPI release hash")
+        logger.debug(f"Hash of package {name} does not match any PyPI release hash")
         return None
 
     async def get_distributions(self, project_name: str) -> DistributionsResponse | None:

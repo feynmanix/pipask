@@ -3,7 +3,7 @@ from typing import Awaitable
 from pipask.checks.types import CheckResult, CheckResultType
 from pipask.checks.base_checker import Checker
 from pipask.infra.pip_report import InstallationReportItem
-from pipask.infra.pypi import ReleaseResponse
+from pipask.infra.pypi import VerifiedPypiReleaseInfo
 
 
 # See https://pypi.org/classifiers/
@@ -17,22 +17,23 @@ class LicenseChecker(Checker):
         return "Checking package license"
 
     async def check(
-        self, package: InstallationReportItem, release_info_future: Awaitable[ReleaseResponse | None]
+        self, package: InstallationReportItem, verified_release_info_future: Awaitable[VerifiedPypiReleaseInfo | None]
     ) -> CheckResult:
         pkg = package.pinned_requirement
-        resolved_release_info = await release_info_future
-        if resolved_release_info is None:
+        verified_release_info = await verified_release_info_future
+        if verified_release_info is None:
             return CheckResult(
                 pkg,
                 result_type=CheckResultType.FAILURE,
                 message="No release information available",
                 priority=self.priority,
             )
-        license = next((c for c in resolved_release_info.info.classifiers if c.startswith("License :: ")), None)
+        info = verified_release_info.release_response.info
+        license = next((c for c in info.classifiers if c.startswith("License :: ")), None)
         if license:
             license = license.split(" :: ")[-1]
         if not license:
-            license = resolved_release_info.info.license
+            license = info.license
         if license:
             return CheckResult(
                 pkg,

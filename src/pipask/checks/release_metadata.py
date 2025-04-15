@@ -1,7 +1,7 @@
 from pipask.checks.types import CheckResult, CheckResultType
 from pipask.checks.base_checker import Checker
 from pipask.infra.pip_report import InstallationReportItem
-from pipask.infra.pypi import ReleaseResponse
+from pipask.infra.pypi import ReleaseResponse, VerifiedPypiReleaseInfo
 from typing import Awaitable
 
 
@@ -27,21 +27,21 @@ class ReleaseMetadataChecker(Checker):
         return "Checking release metadata"
 
     async def check(
-        self, package: InstallationReportItem, release_info_future: Awaitable[ReleaseResponse | None]
+        self, package: InstallationReportItem, verified_release_info_future: Awaitable[VerifiedPypiReleaseInfo | None]
     ) -> CheckResult:
         pkg = package.pinned_requirement
-        resolved_release_info = await release_info_future
-        if resolved_release_info is None:
+        verified_release_info = await verified_release_info_future
+        if verified_release_info is None:
             return CheckResult(
                 pkg,
                 result_type=CheckResultType.FAILURE,
                 message="No release information available",
                 priority=self.priority,
             )
-        if resolved_release_info.info.yanked:
+        if verified_release_info.release_response.info.yanked:
             reason = (
-                f" (reason: {resolved_release_info.info.yanked_reason})"
-                if resolved_release_info.info.yanked_reason
+                f" (reason: {verified_release_info.release_response.info.yanked_reason})"
+                if verified_release_info.release_response.info.yanked_reason
                 else ""
             )
             return CheckResult(
@@ -50,14 +50,14 @@ class ReleaseMetadataChecker(Checker):
                 message=f"The release is yanked{reason}",
                 priority=self.priority,
             )
-        if classifier := _first_matching_classifier(resolved_release_info, _WARNING_CLASSIFIERS):
+        if classifier := _first_matching_classifier(verified_release_info.release_response, _WARNING_CLASSIFIERS):
             return CheckResult(
                 pkg,
                 result_type=CheckResultType.WARNING,
                 message=f"Package is classified as {classifier}",
                 priority=self.priority,
             )
-        if classifier := _first_matching_classifier(resolved_release_info, _SUCCESS_CLASSIFIERS):
+        if classifier := _first_matching_classifier(verified_release_info.release_response, _SUCCESS_CLASSIFIERS):
             return CheckResult(
                 pkg,
                 result_type=CheckResultType.SUCCESS,

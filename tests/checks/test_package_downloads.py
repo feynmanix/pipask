@@ -9,6 +9,7 @@ from pipask.infra.pip_report import (
     InstallationReportItemDownloadInfo,
     InstallationReportItemMetadata,
 )
+from pipask.infra.pypi import ProjectInfo, ReleaseResponse, VerifiedPypiReleaseInfo
 from pipask.infra.pypistats import DownloadStats, PypiStatsClient
 
 PACKAGE_NAME = "package"
@@ -23,11 +24,27 @@ REPORT_ITEM = InstallationReportItem(
 
 
 @pytest.mark.asyncio
+async def test_package_downloads_no_release_info():
+    pypi_stats_client = MagicMock(spec=PypiStatsClient)
+    checker = PackageDownloadsChecker(pypi_stats_client)
+    dummy_release_future = AsyncMock(return_value=None)
+
+    result = await checker.check(REPORT_ITEM, dummy_release_future())
+
+    assert result.result_type == CheckResultType.FAILURE
+    assert result.message == "No release information available"
+
+
+@pytest.mark.asyncio
 async def test_package_downloads_no_stats():
     pypi_stats_client = MagicMock(spec=PypiStatsClient)
     pypi_stats_client.get_download_stats = AsyncMock(return_value=None)
     checker = PackageDownloadsChecker(pypi_stats_client)
-    dummy_release_future = AsyncMock(return_value=None)
+    dummy_release_future = AsyncMock(
+        return_value=VerifiedPypiReleaseInfo(
+            ReleaseResponse(info=ProjectInfo(name=PACKAGE_NAME, version=PACKAGE_VERSION))
+        )
+    )
 
     result = await checker.check(REPORT_ITEM, dummy_release_future())
 
@@ -42,7 +59,11 @@ async def test_high_download_count():
         return_value=DownloadStats(last_month=15000, last_week=500, last_day=50)
     )
     checker = PackageDownloadsChecker(pypi_stats_client)
-    dummy_release_future = AsyncMock(return_value=None)
+    dummy_release_future = AsyncMock(
+        return_value=VerifiedPypiReleaseInfo(
+            ReleaseResponse(info=ProjectInfo(name=PACKAGE_NAME, version=PACKAGE_VERSION))
+        )
+    )
 
     result = await checker.check(REPORT_ITEM, dummy_release_future())
 
@@ -57,7 +78,11 @@ async def test_low_download_count():
         return_value=DownloadStats(last_month=50, last_week=10, last_day=0)
     )
     checker = PackageDownloadsChecker(pypi_stats_client)
-    dummy_release_future = AsyncMock(return_value=None)
+    dummy_release_future = AsyncMock(
+        return_value=VerifiedPypiReleaseInfo(
+            ReleaseResponse(info=ProjectInfo(name=PACKAGE_NAME, version=PACKAGE_VERSION))
+        )
+    )
 
     result = await checker.check(REPORT_ITEM, dummy_release_future())
 

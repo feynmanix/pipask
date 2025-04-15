@@ -1,7 +1,7 @@
 from pipask.checks.types import CheckResult, CheckResultType
 from pipask.checks.base_checker import Checker
 from pipask.infra.pip_report import InstallationReportItem
-from pipask.infra.pypi import ReleaseResponse
+from pipask.infra.pypi import VerifiedPypiReleaseInfo
 from typing import Awaitable
 import asyncio
 from collections import defaultdict
@@ -21,10 +21,10 @@ class ReleaseVulnerabilityChecker(Checker):
         return "Checking known vulnerabilities"
 
     async def check(
-        self, package: InstallationReportItem, release_info_future: Awaitable[ReleaseResponse | None]
+        self, package: InstallationReportItem, verified_release_info_future: Awaitable[VerifiedPypiReleaseInfo | None]
     ) -> CheckResult:
         pkg = package.pinned_requirement
-        resolved_release_info = await release_info_future
+        resolved_release_info = await verified_release_info_future
         if resolved_release_info is None:
             return CheckResult(
                 pkg,
@@ -32,8 +32,8 @@ class ReleaseVulnerabilityChecker(Checker):
                 message="No release information available",
                 priority=self.priority,
             )
-
-        relevant_vulnerabilities = [v for v in resolved_release_info.vulnerabilities if not v.withdrawn]
+        release_response = resolved_release_info.release_response
+        relevant_vulnerabilities = [v for v in release_response.vulnerabilities if not v.withdrawn]
         if len(relevant_vulnerabilities) == 0:
             return CheckResult(
                 pkg,

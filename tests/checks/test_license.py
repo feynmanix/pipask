@@ -3,7 +3,7 @@ from unittest.mock import AsyncMock
 
 from pipask.checks.license import LicenseChecker
 from pipask.checks.types import CheckResultType
-from pipask.infra.pypi import ReleaseResponse, ProjectInfo
+from pipask.infra.pypi import ReleaseResponse, ProjectInfo, VerifiedPypiReleaseInfo
 from pipask.infra.pip_report import (
     InstallationReportItem,
     InstallationReportItemDownloadInfo,
@@ -51,12 +51,14 @@ async def test_no_release_info():
 async def test_license_classifiers(classifiers: list[str], metadata_license: str, expected_message: str):
     checker = LicenseChecker()
     release_info_future = AsyncMock(
-        return_value=ReleaseResponse(
-            info=ProjectInfo(
-                name=PACKAGE_NAME,
-                version=PACKAGE_VERSION,
-                classifiers=classifiers,
-                license=metadata_license,
+        return_value=VerifiedPypiReleaseInfo(
+            ReleaseResponse(
+                info=ProjectInfo(
+                    name=PACKAGE_NAME,
+                    version=PACKAGE_VERSION,
+                    classifiers=classifiers,
+                    license=metadata_license,
+                )
             )
         )
     )
@@ -71,12 +73,14 @@ async def test_license_classifiers(classifiers: list[str], metadata_license: str
 async def test_no_license():
     checker = LicenseChecker()
     release_info_future = AsyncMock(
-        return_value=ReleaseResponse(
-            info=ProjectInfo(
-                name=PACKAGE_NAME,
-                version=PACKAGE_VERSION,
-                classifiers=[],
-                license=None,
+        return_value=VerifiedPypiReleaseInfo(
+            ReleaseResponse(
+                info=ProjectInfo(
+                    name=PACKAGE_NAME,
+                    version=PACKAGE_VERSION,
+                    classifiers=[],
+                    license=None,
+                )
             )
         )
     )

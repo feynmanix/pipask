@@ -10,7 +10,7 @@ from pipask.infra.pip_report import (
     InstallationReportItemDownloadInfo,
     InstallationReportItemMetadata,
 )
-from pipask.infra.pypi import ProjectInfo, ReleaseResponse, VulnerabilityPypi
+from pipask.infra.pypi import ProjectInfo, ReleaseResponse, VerifiedPypiReleaseInfo, VulnerabilityPypi
 from pipask.infra.vulnerability_details import (
     VulnerabilityDetails,
     VulnerabilityDetailsService,
@@ -43,7 +43,9 @@ def sample_package():
 
 @pytest.mark.asyncio
 async def test_no_vulnerabilities(checker, sample_package):
-    release_info = ReleaseResponse(info=ProjectInfo(**sample_package.metadata.model_dump()), vulnerabilities=[])
+    release_info = VerifiedPypiReleaseInfo(
+        ReleaseResponse(info=ProjectInfo(**sample_package.metadata.model_dump()), vulnerabilities=[])
+    )
     result = await checker.check(sample_package, AsyncMock(return_value=release_info)())
 
     assert result == CheckResult(
@@ -94,7 +96,9 @@ async def test_single_vulnerability(
         aliases=[],
         fixed_in=["2.32.0"],
     )
-    release_info = ReleaseResponse(info=ProjectInfo(**sample_package.metadata.model_dump()), vulnerabilities=[vuln])
+    release_info = VerifiedPypiReleaseInfo(
+        ReleaseResponse(info=ProjectInfo(**sample_package.metadata.model_dump()), vulnerabilities=[vuln])
+    )
     vulnerability_details_service.get_details.return_value = VulnerabilityDetails(
         id="CVE-2023-1234", severity=severity, link="https://example.com/cve-2023-1234"
     )
@@ -117,7 +121,9 @@ async def test_withdrawn_vulnerability(checker, sample_package):
         aliases=[],
         fixed_in=["2.32.0"],
     )
-    release_info = ReleaseResponse(info=ProjectInfo(**sample_package.metadata.model_dump()), vulnerabilities=[vuln])
+    release_info = VerifiedPypiReleaseInfo(
+        ReleaseResponse(info=ProjectInfo(**sample_package.metadata.model_dump()), vulnerabilities=[vuln])
+    )
 
     result = await checker.check(sample_package, AsyncMock(return_value=release_info)())
 
@@ -144,7 +150,9 @@ async def test_multiple_vulnerabilities(checker, sample_package, vulnerability_d
         VulnerabilityPypi(id="CVE-2M", withdrawn=None, aliases=[], fixed_in=["2.32.0"]),
         VulnerabilityPypi(id="CVE-3L", withdrawn=None, aliases=[], fixed_in=["2.32.0"]),
     ]
-    release_info = ReleaseResponse(info=ProjectInfo(**sample_package.metadata.model_dump()), vulnerabilities=vulns)
+    release_info = VerifiedPypiReleaseInfo(
+        ReleaseResponse(info=ProjectInfo(**sample_package.metadata.model_dump()), vulnerabilities=vulns)
+    )
     details_map = {
         "CVE-1C": VulnerabilityDetails(id="CVE-1C", severity=VulnerabilitySeverity.CRITICAL),
         "CVE-2M": VulnerabilityDetails(id="CVE-2M", severity=VulnerabilitySeverity.MEDIUM),

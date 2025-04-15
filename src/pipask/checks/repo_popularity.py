@@ -1,6 +1,6 @@
 from typing import Awaitable
 
-from pipask.infra.pypi import ReleaseResponse
+from pipask.infra.pypi import VerifiedPypiReleaseInfo
 from pipask.infra.repo_client import RepoClient
 from pipask.checks.types import CheckResult, CheckResultType
 from pipask.checks.base_checker import Checker
@@ -21,18 +21,18 @@ class RepoPopularityChecker(Checker):
         return "Checking repository popularity"
 
     async def check(
-        self, package: InstallationReportItem, release_info_future: Awaitable[ReleaseResponse | None]
+        self, package: InstallationReportItem, verified_release_info_future: Awaitable[VerifiedPypiReleaseInfo | None]
     ) -> CheckResult:
         pkg = package.pinned_requirement
-        resolved_release_info = await release_info_future
-        if resolved_release_info is None:
+        verified_release_info = await verified_release_info_future
+        if verified_release_info is None:
             return CheckResult(
                 pkg,
                 result_type=CheckResultType.FAILURE,
                 message="No release information available",
                 priority=self.priority,
             )
-        repo_url = resolved_release_info.info.project_urls.recognized_repo_url()
+        repo_url = verified_release_info.release_response.info.project_urls.recognized_repo_url()
         if repo_url is None:
             return CheckResult(
                 pkg, result_type=CheckResultType.WARNING, message="No repository URL found", priority=self.priority

@@ -72,7 +72,11 @@ async def test_pypi_matching_release_info_gets_pypi_file_info(pypi_client: PypiC
         is_direct=True,
     )
 
-    info = await pypi_client.get_matching_release_info(package)
+    result = await pypi_client.get_matching_release_info(package)
+    assert result is not None
+    assert result.name == "pyfluent-iterables"
+    assert result.version == "1.2.0"
+    info = result.release_response
 
     assert info is not None
     assert info.info.package_url == "https://pypi.org/project/pyfluent-iterables/"
@@ -122,17 +126,18 @@ async def test_pypi_matching_release_info_gets_info_only_when_hash_matches(hash_
     pypi_client = PypiClient(transport=(httpx.MockTransport(mock_handler)))
 
     # Act
-    info = await pypi_client.get_matching_release_info(package)
-
-    # Assert
+    result = await pypi_client.get_matching_release_info(package)
     if hash_matches:
-        assert info is not None
+        assert result is not None
+        assert result.name == "test-package"
+        assert result.version == "1.0.0"
+        info = result.release_response
         assert info.info.name == "test-package"
         assert info.info.version == "1.0.0"
         assert info.info.package_url == package_url
         assert info.info.yanked
     else:
-        assert info is None
+        assert result is None
 
 
 @pytest.mark.integration
