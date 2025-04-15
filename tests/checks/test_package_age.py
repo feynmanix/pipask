@@ -5,11 +5,6 @@ import pytest
 
 from pipask.checks.package_age import PackageAge
 from pipask.checks.types import CheckResult, CheckResultType
-from pipask.infra.pip_report import (
-    InstallationReportItem,
-    InstallationReportItemDownloadInfo,
-    InstallationReportItemMetadata,
-)
 from pipask.infra.pypi import (
     Distribution,
     DistributionsResponse,
@@ -21,13 +16,6 @@ from pipask.infra.pypi import (
 
 PACKAGE_NAME = "package"
 PACKAGE_VERSION = "1.0.0"
-REPORT_ITEM = InstallationReportItem(
-    metadata=InstallationReportItemMetadata(name=PACKAGE_NAME, version=PACKAGE_VERSION),
-    download_info=InstallationReportItemDownloadInfo(url="https://example.com"),
-    requested=True,
-    is_yanked=False,
-    is_direct=True,
-)
 
 
 @pytest.mark.asyncio
@@ -39,13 +27,11 @@ async def test_no_distributions():
     )
     checker = PackageAge(pypi_client)
 
-    result = await checker.check(REPORT_ITEM, release_info)
+    result = await checker.check(release_info)
 
     assert result == CheckResult(
-        pinned_requirement="package==1.0.0",
         result_type=CheckResultType.FAILURE,
         message="No distributions information available",
-        priority=PackageAge.priority,
     )
 
 
@@ -67,13 +53,11 @@ async def test_too_new_package():
         ReleaseResponse(info=ProjectInfo(name=PACKAGE_NAME, version=PACKAGE_VERSION))
     )
 
-    result = await checker.check(REPORT_ITEM, release_info)
+    result = await checker.check(release_info)
 
     assert result == CheckResult(
-        pinned_requirement="package==1.0.0",
         result_type=CheckResultType.WARNING,
         message="A newly published package: created only 10 days ago",
-        priority=PackageAge.priority,
     )
 
 
@@ -112,13 +96,11 @@ async def test_too_old_release():
         )
     )
 
-    result = await checker.check(REPORT_ITEM, release_info)
+    result = await checker.check(release_info)
 
     assert result == CheckResult(
-        pinned_requirement="package==1.0.0",
         result_type=CheckResultType.WARNING,
         message="The release is older than a year: 400 days old",
-        priority=PackageAge.priority,
     )
 
 
@@ -158,11 +140,9 @@ async def test_successful_check():
         )
     )
 
-    result = await checker.check(REPORT_ITEM, release_info)
+    result = await checker.check(release_info)
 
     assert result == CheckResult(
-        pinned_requirement="package==1.0.0",
         result_type=CheckResultType.SUCCESS,
         message="The release is 1 day old",
-        priority=PackageAge.priority,
     )

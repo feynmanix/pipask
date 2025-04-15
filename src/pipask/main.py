@@ -30,7 +30,7 @@ from pipask.infra.pip import (
     parse_pip_install_arguments,
     pip_pass_through,
 )
-from pipask.infra.pip_report import InstallationReportItem, InstallationReportItemMetadata, PipInstallReport
+from pipask.infra.pip_report import InstallationReportItem, PipInstallReport
 from pipask.infra.pypi import PypiClient, VerifiedPypiReleaseInfo
 from pipask.infra.pypistats import PypiStatsClient
 from pipask.infra.repo_client import RepoClient
@@ -217,10 +217,8 @@ class ChecksExecutor:
                 unverified_metadata.metadata.version,
                 [
                     CheckResult(
-                        f"{unverified_metadata.metadata.name}=={unverified_metadata.metadata.version}",
-                        result_type=(CheckResultType.FAILURE),
+                        result_type=CheckResultType.FAILURE,
                         message="No release information available",
-                        priority=0,
                     )
                 ],
             )
@@ -237,17 +235,7 @@ class ChecksExecutor:
         self, checker: Checker, release_info: VerifiedPypiReleaseInfo, check_progress_tracker: _CheckProgressTracker
     ) -> CheckResult:
         try:
-            package = InstallationReportItem(  # TODO
-                metadata=InstallationReportItemMetadata(
-                    name=release_info.name,
-                    version=release_info.version,
-                ),
-                download_info=None,
-                requested=True,
-                is_direct=True,
-                is_yanked=False,
-            )
-            result = await checker.check(package, release_info)
+            result = await checker.check(release_info)
             check_progress_tracker.update_check(checker, result.result_type)
             return result
         except Exception as e:
@@ -257,10 +245,8 @@ class ChecksExecutor:
             )
             check_progress_tracker.update_check(checker, CheckResultType.FAILURE)
             return CheckResult(
-                f"{release_info.name}=={release_info.version}",
                 result_type=CheckResultType.FAILURE,
                 message=f"Check failed: {str(e)}",
-                priority=0,  # TODO
             )
 
 

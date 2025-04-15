@@ -4,23 +4,11 @@ import pytest
 
 from pipask.checks.package_downloads import PackageDownloadsChecker
 from pipask.checks.types import CheckResultType
-from pipask.infra.pip_report import (
-    InstallationReportItem,
-    InstallationReportItemDownloadInfo,
-    InstallationReportItemMetadata,
-)
 from pipask.infra.pypi import ProjectInfo, ReleaseResponse, VerifiedPypiReleaseInfo
 from pipask.infra.pypistats import DownloadStats, PypiStatsClient
 
 PACKAGE_NAME = "package"
 PACKAGE_VERSION = "1.0.0"
-REPORT_ITEM = InstallationReportItem(
-    metadata=InstallationReportItemMetadata(name=PACKAGE_NAME, version=PACKAGE_VERSION),
-    download_info=InstallationReportItemDownloadInfo(url="https://example.com"),
-    requested=True,
-    is_yanked=False,
-    is_direct=True,
-)
 
 
 @pytest.mark.asyncio
@@ -32,7 +20,7 @@ async def test_package_downloads_no_stats():
         ReleaseResponse(info=ProjectInfo(name=PACKAGE_NAME, version=PACKAGE_VERSION))
     )
 
-    result = await checker.check(REPORT_ITEM, release_info)
+    result = await checker.check(release_info)
 
     assert result.result_type == CheckResultType.FAILURE
     assert result.message == "No download statistics available"
@@ -49,7 +37,7 @@ async def test_high_download_count():
         ReleaseResponse(info=ProjectInfo(name=PACKAGE_NAME, version=PACKAGE_VERSION))
     )
 
-    result = await checker.check(REPORT_ITEM, release_info)
+    result = await checker.check(release_info)
 
     assert result.result_type == CheckResultType.SUCCESS
     assert result.message == "15,000 downloads from PyPI in the last month"
@@ -66,7 +54,7 @@ async def test_low_download_count():
         ReleaseResponse(info=ProjectInfo(name=PACKAGE_NAME, version=PACKAGE_VERSION))
     )
 
-    result = await checker.check(REPORT_ITEM, release_info)
+    result = await checker.check(release_info)
 
     assert result.result_type == CheckResultType.FAILURE
     assert result.message == "Only 50 downloads from PyPI in the last month"

@@ -1,17 +1,15 @@
-from pipask.checks.types import CheckResult, CheckResultType
-from pipask.checks.base_checker import Checker
-from pipask.infra.pip_report import InstallationReportItem
-from pipask.infra.pypi import VerifiedPypiReleaseInfo
 import asyncio
 from collections import defaultdict
-from pipask.infra.vulnerability_details import VulnerabilitySeverity, VulnerabilityDetails, VulnerabilityDetailsService
+
+from pipask.checks.base_checker import Checker
+from pipask.checks.types import CheckResult, CheckResultType
+from pipask.infra.pypi import VerifiedPypiReleaseInfo
+from pipask.infra.vulnerability_details import VulnerabilityDetails, VulnerabilityDetailsService, VulnerabilitySeverity
 
 MAX_DISPLAYED_VULNERABILITIES = 5
 
 
 class ReleaseVulnerabilityChecker(Checker):
-    priority = 40
-
     def __init__(self, vulnerability_details_service: VulnerabilityDetailsService):
         self._vulnerability_details_service = vulnerability_details_service
 
@@ -19,18 +17,13 @@ class ReleaseVulnerabilityChecker(Checker):
     def description(self) -> str:
         return "Checking known vulnerabilities"
 
-    async def check(
-        self, package: InstallationReportItem, verified_release_info: VerifiedPypiReleaseInfo
-    ) -> CheckResult:
-        pkg = package.pinned_requirement
+    async def check(self, verified_release_info: VerifiedPypiReleaseInfo) -> CheckResult:
         release_response = verified_release_info.release_response
         relevant_vulnerabilities = [v for v in release_response.vulnerabilities if not v.withdrawn]
         if len(relevant_vulnerabilities) == 0:
             return CheckResult(
-                pkg,
                 result_type=CheckResultType.SUCCESS,
                 message="No known vulnerabilities found",
-                priority=self.priority,
             )
 
         vulnerability_details = await asyncio.gather(
@@ -39,10 +32,8 @@ class ReleaseVulnerabilityChecker(Checker):
         worst_severity = VulnerabilitySeverity.get_worst(*(v.severity for v in vulnerability_details))
         formatted_vulnerabilities = _format_vulnerabilities(vulnerability_details)
         return CheckResult(
-            pkg,
             result_type=worst_severity.result_type if worst_severity is not None else CheckResultType.WARNING,
             message=f"Found the following vulnerabilities: {formatted_vulnerabilities}",
-            priority=self.priority,
         )
 
 

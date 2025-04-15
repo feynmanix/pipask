@@ -48,7 +48,8 @@ async def test_pip_resolves_package_to_install():
     )
     assert report is not None
     assert len(report.install) == 1
-    assert report.install[0].pinned_requirement == "pyfluent-iterables==1.2.0"
+    assert report.install[0].metadata.name == "pyfluent-iterables"
+    assert report.install[0].metadata.version == "1.2.0"
 
 
 def test_parse_pip_arguments_normal_command():

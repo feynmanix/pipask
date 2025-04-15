@@ -5,11 +5,6 @@ import pytest
 
 from pipask.checks.types import CheckResult, CheckResultType
 from pipask.checks.vulnerabilities import ReleaseVulnerabilityChecker, _format_vulnerabilities
-from pipask.infra.pip_report import (
-    InstallationReportItem,
-    InstallationReportItemDownloadInfo,
-    InstallationReportItemMetadata,
-)
 from pipask.infra.pypi import ProjectInfo, ReleaseResponse, VerifiedPypiReleaseInfo, VulnerabilityPypi
 from pipask.infra.vulnerability_details import (
     VulnerabilityDetails,
@@ -30,29 +25,17 @@ def checker(vulnerability_details_service):
     return ReleaseVulnerabilityChecker(vulnerability_details_service)
 
 
-@pytest.fixture
-def sample_package():
-    return InstallationReportItem(
-        metadata=InstallationReportItemMetadata(name="requests", version="2.31.0"),
-        download_info=InstallationReportItemDownloadInfo(url="https://example.com/requests-2.31.0.tar.gz"),
-        requested=True,
-        is_yanked=False,
-        is_direct=True,
-    )
+sample_project_info = ProjectInfo(name="requests", version="2.31.0")
 
 
 @pytest.mark.asyncio
-async def test_no_vulnerabilities(checker, sample_package):
-    release_info = VerifiedPypiReleaseInfo(
-        ReleaseResponse(info=ProjectInfo(**sample_package.metadata.model_dump()), vulnerabilities=[])
-    )
-    result = await checker.check(sample_package, release_info)
+async def test_no_vulnerabilities(checker):
+    release_info = VerifiedPypiReleaseInfo(ReleaseResponse(info=sample_project_info, vulnerabilities=[]))
+    result = await checker.check(release_info)
 
     assert result == CheckResult(
-        pinned_requirement=sample_package.pinned_requirement,
         result_type=CheckResultType.SUCCESS,
         message="No known vulnerabilities found",
-        priority=ReleaseVulnerabilityChecker.priority,
     )
 
 
@@ -87,60 +70,50 @@ async def test_no_vulnerabilities(checker, sample_package):
         ),
     ],
 )
-async def test_single_vulnerability(
-    checker, sample_package, vulnerability_details_service, severity, result_type, message
-):
+async def test_single_vulnerability(checker, vulnerability_details_service, severity, result_type, message):
     vuln = VulnerabilityPypi(
         id="CVE-2023-1234",
         withdrawn=None,
         aliases=[],
         fixed_in=["2.32.0"],
     )
-    release_info = VerifiedPypiReleaseInfo(
-        ReleaseResponse(info=ProjectInfo(**sample_package.metadata.model_dump()), vulnerabilities=[vuln])
-    )
+    release_info = VerifiedPypiReleaseInfo(ReleaseResponse(info=sample_project_info, vulnerabilities=[vuln]))
     vulnerability_details_service.get_details.return_value = VulnerabilityDetails(
         id="CVE-2023-1234", severity=severity, link="https://example.com/cve-2023-1234"
     )
 
-    result = await checker.check(sample_package, release_info)
+    result = await checker.check(release_info)
 
     assert result == CheckResult(
-        pinned_requirement=sample_package.pinned_requirement,
         result_type=result_type,
         message=f"Found the following vulnerabilities: {message}",
-        priority=ReleaseVulnerabilityChecker.priority,
     )
 
 
 @pytest.mark.asyncio
-async def test_withdrawn_vulnerability(checker, sample_package):
+async def test_withdrawn_vulnerability(checker):
     vuln = VulnerabilityPypi(
         id="CVE-2023-1234",
         withdrawn=datetime.now(),
         aliases=[],
         fixed_in=["2.32.0"],
     )
-    release_info = VerifiedPypiReleaseInfo(
-        ReleaseResponse(info=ProjectInfo(**sample_package.metadata.model_dump()), vulnerabilities=[vuln])
-    )
+    release_info = VerifiedPypiReleaseInfo(ReleaseResponse(info=sample_project_info, vulnerabilities=[vuln]))
 
-    result = await checker.check(sample_package, release_info)
+    result = await checker.check(release_info)
 
     assert result.result_type == CheckResultType.SUCCESS
     assert "No known vulnerabilities found" in result.message
 
 
 @pytest.mark.asyncio
-async def test_multiple_vulnerabilities(checker, sample_package, vulnerability_details_service):
+async def test_multiple_vulnerabilities(checker, vulnerability_details_service):
     vulns = [
         VulnerabilityPypi(id="CVE-1C", withdrawn=None, aliases=[], fixed_in=["2.32.0"]),
         VulnerabilityPypi(id="CVE-2M", withdrawn=None, aliases=[], fixed_in=["2.32.0"]),
         VulnerabilityPypi(id="CVE-3L", withdrawn=None, aliases=[], fixed_in=["2.32.0"]),
     ]
-    release_info = VerifiedPypiReleaseInfo(
-        ReleaseResponse(info=ProjectInfo(**sample_package.metadata.model_dump()), vulnerabilities=vulns)
-    )
+    release_info = VerifiedPypiReleaseInfo(ReleaseResponse(info=sample_project_info, vulnerabilities=vulns))
     details_map = {
         "CVE-1C": VulnerabilityDetails(id="CVE-1C", severity=VulnerabilitySeverity.CRITICAL),
         "CVE-2M": VulnerabilityDetails(id="CVE-2M", severity=VulnerabilitySeverity.MEDIUM),
@@ -149,13 +122,11 @@ async def test_multiple_vulnerabilities(checker, sample_package, vulnerability_d
 
     vulnerability_details_service.get_details.side_effect = lambda vuln: details_map[vuln.id]
 
-    result = await checker.check(sample_package, release_info)
+    result = await checker.check(release_info)
 
     assert result == CheckResult(
-        pinned_requirement=sample_package.pinned_requirement,
         result_type=CheckResultType.FAILURE,
         message="Found the following vulnerabilities: [red]CVE-1C (CRITICAL)[/red], [yellow]CVE-2M (Medium)[/yellow], [default]CVE-3L (Low)[/default]",
-        priority=ReleaseVulnerabilityChecker.priority,
     )
 
 
