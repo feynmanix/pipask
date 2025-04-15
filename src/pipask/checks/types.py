@@ -48,3 +48,14 @@ class CheckResult:
     result_type: CheckResultType
     message: str
     priority: int
+
+
+@dataclass
+class PackageCheckResults:
+    name: str
+    version: str
+    results: list[CheckResult]
+
+    @property
+    def pinned_requirement(self) -> str:
+        return f"{self.name}=={self.version}"
