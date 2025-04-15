@@ -5,8 +5,11 @@ from unittest.mock import AsyncMock
 from pipask.checks.package_age import PackageAge
 from pipask.checks.types import CheckResult, CheckResultType
 from pipask.infra.pypi import ReleaseResponse, ProjectInfo, DistributionsResponse, Distribution, ProjectReleaseFile
-from pipask.infra.pip_report import InstallationReportItem, InstallationReportItemDownloadInfo, \
-    InstallationReportItemMetadata
+from pipask.infra.pip_report import (
+    InstallationReportItem,
+    InstallationReportItemDownloadInfo,
+    InstallationReportItemMetadata,
+)
 
 PACKAGE_NAME = "package"
 PACKAGE_VERSION = "1.0.0"

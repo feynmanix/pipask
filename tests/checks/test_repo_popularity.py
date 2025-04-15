@@ -5,8 +5,11 @@ from pipask.checks.repo_popularity import RepoPopularityChecker
 from pipask.checks.types import CheckResultType
 from pipask.infra.pypi import ReleaseResponse, ProjectInfo, ProjectUrls
 from pipask.infra.repo_client import RepoClient, RepoInfo
-from pipask.infra.pip_report import InstallationReportItem, InstallationReportItemDownloadInfo, \
-    InstallationReportItemMetadata
+from pipask.infra.pip_report import (
+    InstallationReportItem,
+    InstallationReportItemDownloadInfo,
+    InstallationReportItemMetadata,
+)
 
 PACKAGE_NAME = "package"
 PACKAGE_VERSION = "1.0.0"
