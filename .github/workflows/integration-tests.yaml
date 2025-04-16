@@ -1,8 +1,6 @@
 name: Integration Tests
 on:
   workflow_dispatch: # on demand:
-  push:
-      branches: [metadata-from-pypi]
 
 
 jobs:
