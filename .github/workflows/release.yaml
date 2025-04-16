@@ -94,7 +94,7 @@ jobs:
             ./dist/*.whl
 
       - name: Upload artifact signatures to GitHub Release
-        if: github.event_name == 'release'
+        if: github.event_name == 'published'
         env:
           GITHUB_TOKEN: ${{ github.token }}
         run: |
@@ -105,5 +105,5 @@ jobs:
 
       - name: Publish distribution 📦 to PyPI
         uses: pypa/gh-action-pypi-publish@release/v1
-        if: github.event_name == 'release'
+        if: github.event_name == 'published'
         
