@@ -94,16 +94,19 @@ jobs:
             ./dist/*.whl
 
       - name: Upload artifact signatures to GitHub Release
-        if: github.event_name == 'published'
+        if: github.event_name == 'release'
         env:
           GITHUB_TOKEN: ${{ github.token }}
         run: |
-          gh release upload --repo '${{ github.repository }}' '${{ github.ref_name }}' dist/* 
+          # Commented out: although this comes from the pypa documentation, 
+          # it seems to conflict with the gh-action-sigstore-python action 
+          # https://packaging.python.org/en/latest/guides/publishing-package-distribution-releases-using-github-actions-ci-cd-workflows/
+          # gh release upload --repo '${{ github.repository }}' '${{ github.ref_name }}' dist/* 
 
           # Remove the Sigstore signatures from the dist folder - they would not be accepted by PyPI
           rm dist/*.sigstore.json
 
       - name: Publish distribution 📦 to PyPI
         uses: pypa/gh-action-pypi-publish@release/v1
-        if: github.event_name == 'published'
+        if: github.event_name == 'release'
         
