@@ -45,7 +45,4 @@ class PackageCheckResults:
     name: str
     version: str
     results: list[CheckResult]
-
-    @property
-    def pinned_requirement(self) -> str:
-        return f"{self.name}=={self.version}"
+    pypi_url: str | None = None

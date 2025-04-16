@@ -213,9 +213,9 @@ class ChecksExecutor:
             # We don't have any trusted release information from PyPI available, we can't run any checks
             check_progress_tracker.update_all_checks(CheckResultType.FAILURE)
             return PackageCheckResults(
-                unverified_metadata.metadata.name,
-                unverified_metadata.metadata.version,
-                [
+                name=unverified_metadata.metadata.name,
+                version=unverified_metadata.metadata.version,
+                results=[
                     CheckResult(
                         result_type=CheckResultType.FAILURE,
                         message="No release information available",
@@ -228,7 +228,10 @@ class ChecksExecutor:
             *[self._run_one_check(checker, release_info, check_progress_tracker) for checker in self._checkers]
         )
         return PackageCheckResults(
-            unverified_metadata.metadata.name, unverified_metadata.metadata.version, check_results
+            name=release_info.name,
+            version=release_info.version,
+            results=check_results,
+            pypi_url=release_info.pypi_url
         )
 
     async def _run_one_check(

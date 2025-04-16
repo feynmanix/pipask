@@ -169,6 +169,10 @@ class VerifiedPypiReleaseInfo:
     def version(self) -> str:
         return self.release_response.info.version
 
+    @property
+    def pypi_url(self) -> str:
+        return f"https://pypi.org/project/{self.name}/{self.version}/"
+
 
 class PypiClient:
     def __init__(self, transport: AsyncBaseTransport | None = None):
