@@ -11,7 +11,12 @@ def print_report(package_results: list[PackageCheckResults], console: Console) -
             or CheckResultType.SUCCESS
         )
         worst_result_color = worst_result.rich_color
-        console.print(f"  [bold]\\[[{worst_result_color}]{package_result.pinned_requirement}[/{worst_result_color}]]")
+        formatted_requirement = (
+            f"{package_result.name}==[link={package_result.pypi_url}]{package_result.version}[/link]"
+            if package_result.pypi_url
+            else f"{package_result.name}=={package_result.version}"
+        )
+        console.print(f"  [bold]\\[[{worst_result_color}]{formatted_requirement}[/{worst_result_color}]]")
 
         for check_result in package_result.results:
             color = (
