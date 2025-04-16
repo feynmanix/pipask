@@ -23,7 +23,7 @@ async def test_repo_popularity_no_repo_url():
     repo_client = MagicMock(spec=RepoClient)
     checker = RepoPopularityChecker(repo_client)
     release_info = VerifiedPypiReleaseInfo(
-        ReleaseResponse(info=ProjectInfo(name=PACKAGE_NAME, version=PACKAGE_VERSION, project_urls=ProjectUrls(**{})))
+        ReleaseResponse(info=ProjectInfo(name=PACKAGE_NAME, version=PACKAGE_VERSION, project_urls=None))
     )
 
     result = await checker.check(release_info)

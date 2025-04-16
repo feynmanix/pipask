@@ -82,7 +82,7 @@ class ProjectInfo(BaseModel):
     name: str
     package_url: Optional[str] = None
     project_url: Optional[str] = None
-    project_urls: ProjectUrls = Field(default_factory=lambda: ProjectUrls(**{}))
+    project_urls: Optional[ProjectUrls] = None
     version: str
     yanked: bool = False
     yanked_reason: Optional[str] = None

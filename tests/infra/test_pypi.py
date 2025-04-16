@@ -36,16 +36,20 @@ async def test_pypi_gets_non_existent_project_info(pypi_client: PypiClient):
     [
         ("pyfluent-iterables", "https://github.com/mifeet/pyfluent-iterables"),  # Intentionally using an obsolete URL
         ("fastapi", "https://github.com/fastapi/fastapi"),
-        ("torch", None),
+        ("torch", "https://github.com/pytorch/pytorch"),
         ("huggingface-hub", "https://github.com/huggingface/huggingface_hub"),
         ("ase", "https://gitlab.com/ase/ase"),
         ("pip-tools", "https://github.com/jazzband/pip-tools"),
+        ("PIPS", None)
     ],
 )
 async def test_pypi_gets_source_repo(pypi_client: PypiClient, project_name: str, expected_url: str | None):
     project_info = await pypi_client.get_project_info(project_name)
     assert project_info is not None
-    assert project_info.info.project_urls.recognized_repo_url() == expected_url
+    if expected_url is None:
+        assert project_info.info.project_urls is None or project_info.info.project_urls.recognized_repo_url() is None
+    else:
+        assert project_info.info.project_urls.recognized_repo_url() == expected_url
 
 
 @pytest.mark.integration
