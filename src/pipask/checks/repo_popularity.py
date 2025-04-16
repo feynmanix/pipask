@@ -16,7 +16,8 @@ class RepoPopularityChecker(Checker):
         return "Checking repository popularity"
 
     async def check(self, verified_release_info: VerifiedPypiReleaseInfo) -> CheckResult:
-        repo_url = verified_release_info.release_response.info.project_urls.recognized_repo_url()
+        project_urls = verified_release_info.release_response.info.project_urls
+        repo_url = project_urls.recognized_repo_url() if project_urls is not None else None
         if repo_url is None:
             return CheckResult(result_type=CheckResultType.WARNING, message="No repository URL found")
         repo_info = await self._repo_client.get_repo_info(repo_url)
