@@ -34,6 +34,7 @@ class CheckResultType(str, Enum):
             return CheckResultType.SUCCESS
         return None
 
+
 @dataclass
 class CheckResult:
     result_type: CheckResultType
