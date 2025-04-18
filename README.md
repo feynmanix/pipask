@@ -19,7 +19,7 @@ pip install pipask
     pipask install 'requests>=2.0.0'
     ```
 2. `pipask` will perform checks on the requested packages to be installed (i.e., it will *not* check *transitive* dependencies).
-3. `pipask` will print a report with the results and prompt you whether to continue with the installation.
+3. You will get a report with the results and be prompted whether to continue with the installation.
 4. If you proceed, `pipask` will hand over the actual installation to `pip`.
 
 To run checks without installing, you can use the `--dry-run` flag:
