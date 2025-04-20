@@ -189,7 +189,7 @@ def test_install_report_respects_upgrade(temp_venv_python, upgrade, data_dir, cl
     subprocess.check_call(get_pip_command() + ["install", "pyfluent-iterables==1.2.0"])
     clear_venv_dependent_caches()  # pkg_resources needs to be refreshed to pick up the new dependency
     upgrade_opt = ["--upgrade"] if upgrade else []
-    args = _to_parsed_args(["install", "--isolated", *upgrade_opt, "pyfluent-iterables"])
+    args = _to_parsed_args(["install", "--isolated", *upgrade_opt, "pyfluent-iterables<=2.0.1"])
     report = get_pip_install_report_from_pypi(args)
 
     if upgrade:

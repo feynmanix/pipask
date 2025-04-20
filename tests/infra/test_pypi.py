@@ -47,7 +47,7 @@ async def test_pypi_gets_non_existent_project_info(pypi_client: PypiClient):
 @pytest.mark.parametrize(
     "project_name,expected_url",
     [
-        ("pyfluent-iterables", "https://github.com/mifeet/pyfluent-iterables"),  # Intentionally using an obsolete URL
+        ("pyfluent-iterables", "https://github.com/feynmanix/pyfluent-iterables"),  # Intentionally using an obsolete URL
         ("fastapi", "https://github.com/fastapi/fastapi"),
         ("torch", "https://github.com/pytorch/pytorch"),
         ("huggingface-hub", "https://github.com/huggingface/huggingface_hub"),
