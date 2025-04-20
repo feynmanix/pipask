@@ -17,7 +17,8 @@ async def test_package_downloads_no_stats():
     pypi_stats_client.get_download_stats = AsyncMock(return_value=None)
     checker = PackageDownloadsChecker(pypi_stats_client)
     release_info = VerifiedPypiReleaseInfo(
-        ReleaseResponse(info=ProjectInfo(name=PACKAGE_NAME, version=PACKAGE_VERSION))
+        ReleaseResponse(info=ProjectInfo(name=PACKAGE_NAME, version=PACKAGE_VERSION)),
+        "file.whl",
     )
 
     result = await checker.check(release_info)
@@ -34,7 +35,8 @@ async def test_high_download_count():
     )
     checker = PackageDownloadsChecker(pypi_stats_client)
     release_info = VerifiedPypiReleaseInfo(
-        ReleaseResponse(info=ProjectInfo(name=PACKAGE_NAME, version=PACKAGE_VERSION))
+        ReleaseResponse(info=ProjectInfo(name=PACKAGE_NAME, version=PACKAGE_VERSION)),
+        "file.whl",
     )
 
     result = await checker.check(release_info)
@@ -51,7 +53,8 @@ async def test_low_download_count():
     )
     checker = PackageDownloadsChecker(pypi_stats_client)
     release_info = VerifiedPypiReleaseInfo(
-        ReleaseResponse(info=ProjectInfo(name=PACKAGE_NAME, version=PACKAGE_VERSION))
+        ReleaseResponse(info=ProjectInfo(name=PACKAGE_NAME, version=PACKAGE_VERSION)),
+        "file.whl",
     )
 
     result = await checker.check(release_info)

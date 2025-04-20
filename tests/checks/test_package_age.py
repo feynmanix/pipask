@@ -23,7 +23,8 @@ async def test_no_distributions():
     pypi_client = AsyncMock()
     pypi_client.get_distributions.return_value = None
     release_info = VerifiedPypiReleaseInfo(
-        ReleaseResponse(info=ProjectInfo(name=PACKAGE_NAME, version=PACKAGE_VERSION))
+        ReleaseResponse(info=ProjectInfo(name=PACKAGE_NAME, version=PACKAGE_VERSION)),
+        "file.whl",
     )
     checker = PackageAge(pypi_client)
 
@@ -50,7 +51,8 @@ async def test_too_new_package():
     )
     checker = PackageAge(pypi_client)
     release_info = VerifiedPypiReleaseInfo(
-        ReleaseResponse(info=ProjectInfo(name=PACKAGE_NAME, version=PACKAGE_VERSION))
+        ReleaseResponse(info=ProjectInfo(name=PACKAGE_NAME, version=PACKAGE_VERSION)),
+        "file.whl",
     )
 
     result = await checker.check(release_info)
@@ -93,7 +95,8 @@ async def test_too_old_release():
                     yanked=False,
                 )
             ],
-        )
+        ),
+        "file.whl",
     )
 
     result = await checker.check(release_info)
@@ -137,7 +140,8 @@ async def test_successful_check():
                     yanked=False,
                 )
             ],
-        )
+        ),
+        "file.whl",
     )
 
     result = await checker.check(release_info)

@@ -34,7 +34,8 @@ async def test_license_classifiers(classifiers: list[str], metadata_license: str
                 classifiers=classifiers,
                 license=metadata_license,
             )
-        )
+        ),
+        "file.whl",
     )
 
     result = await checker.check(release_info)
@@ -54,7 +55,8 @@ async def test_no_license():
                 classifiers=[],
                 license=None,
             )
-        )
+        ),
+        "file.whl",
     )
 
     result = await checker.check(release_info)

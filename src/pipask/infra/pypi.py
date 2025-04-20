@@ -1,4 +1,5 @@
 import logging
+import urllib.parse
 from dataclasses import dataclass
 from datetime import datetime
 from typing import List, Optional, Tuple
@@ -24,6 +25,7 @@ def _get_maybe_repo_url(url: str) -> str | None:
 
 
 class ProjectUrls(BaseModel):
+    # See also https://docs.pypi.org/project_metadata/#icons
     bug_reports_lowercase: Optional[str] = Field(None, alias="bug reports")
     homepage_lowercase: Optional[str] = Field(None, alias="homepage")
     source_lowercase: Optional[str] = Field(None, alias="source")
@@ -161,6 +163,8 @@ class VerifiedPypiReleaseInfo:
 
     release_response: ReleaseResponse
 
+    release_filename: str
+
     @property
     def name(self) -> str:
         return self.release_response.info.name
@@ -204,18 +208,23 @@ class PypiClient:
 
         if package.download_info.url.startswith(PyPI.simple_url):
             # The package is from PyPI, so we can get the metadata directly
-            return VerifiedPypiReleaseInfo(pypi_release_info)
+            filename = urllib.parse.urlparse(package.download_info.url).path.split("/")[-1]
+            return VerifiedPypiReleaseInfo(pypi_release_info, filename)
         elif package.download_info.archive_info is not None and package.download_info.archive_info.hashes is not None:
             # Not from PyPI, but we can check if the hash matches PyPI (this will match, e.g., for index proxies)
-            acceptable_hashes: set[Tuple[str, str]] = {
-                digest for url in pypi_release_info.urls for digest in url.digests.items() if digest[0] != "md5"
+            acceptable_hashes_to_filename: dict[Tuple[str, str], str] = {
+                digest: url.filename
+                for url in pypi_release_info.urls
+                for digest in url.digests.items()
+                if digest[0] != "md5"
             }
             package_hashes: list[Tuple[str, str]] = list(package.download_info.archive_info.hashes.items())
             for package_hash in package_hashes:
-                if package_hash in acceptable_hashes:
+                if package_hash in acceptable_hashes_to_filename:
                     # We have a match, the metadata can be used
                     logger.debug(f"\n\nHash of package {name} matches a PyPI release hash\n\n")
-                    return VerifiedPypiReleaseInfo(pypi_release_info)
+                    filename = acceptable_hashes_to_filename[package_hash]
+                    return VerifiedPypiReleaseInfo(pypi_release_info, filename)
         # No match found, we cannot reliably say the PyPI metadata belong to the package
         logger.debug(f"Hash of package {name} does not match any PyPI release hash")
         return None

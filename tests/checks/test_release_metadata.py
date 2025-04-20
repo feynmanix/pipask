@@ -21,7 +21,8 @@ PACKAGE_VERSION = "1.0.0"
                         yanked=True,
                         yanked_reason="Security vulnerability",
                     )
-                )
+                ),
+                "file.whl",
             ),
             CheckResultType.FAILURE,
             "The release is yanked (reason: Security vulnerability)",
@@ -29,6 +30,7 @@ PACKAGE_VERSION = "1.0.0"
         (
             VerifiedPypiReleaseInfo(
                 ReleaseResponse(info=ProjectInfo(name=PACKAGE_NAME, version=PACKAGE_VERSION, yanked=True)),
+                "file.whl",
             ),
             CheckResultType.FAILURE,
             "The release is yanked",
@@ -65,7 +67,8 @@ async def test_warning_classifiers(classifier):
                 yanked=False,
                 classifiers=["License :: OSI Approved :: MIT License", classifier],
             )
-        )
+        ),
+        "file.whl",
     )
 
     result = await checker.check(release_info)
@@ -92,7 +95,8 @@ async def test_success_classifiers(classifier):
                 yanked=False,
                 classifiers=[classifier] if classifier else [],
             )
-        )
+        ),
+        "file.whl",
     )
 
     result = await checker.check(release_info)
@@ -107,7 +111,8 @@ async def test_success_classifiers(classifier):
 async def test_no_classifiers():
     checker = ReleaseMetadataChecker()
     release_info = VerifiedPypiReleaseInfo(
-        ReleaseResponse(info=ProjectInfo(name=PACKAGE_NAME, version=PACKAGE_VERSION))
+        ReleaseResponse(info=ProjectInfo(name=PACKAGE_NAME, version=PACKAGE_VERSION)),
+        "file.whl",
     )
 
     result = await checker.check(release_info)

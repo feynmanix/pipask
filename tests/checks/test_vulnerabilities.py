@@ -30,7 +30,7 @@ sample_project_info = ProjectInfo(name="requests", version="2.31.0")
 
 @pytest.mark.asyncio
 async def test_no_vulnerabilities(checker):
-    release_info = VerifiedPypiReleaseInfo(ReleaseResponse(info=sample_project_info, vulnerabilities=[]))
+    release_info = VerifiedPypiReleaseInfo(ReleaseResponse(info=sample_project_info, vulnerabilities=[]), "file.whl")
     result = await checker.check(release_info)
 
     assert result == CheckResult(
@@ -77,7 +77,7 @@ async def test_single_vulnerability(checker, vulnerability_details_service, seve
         aliases=[],
         fixed_in=["2.32.0"],
     )
-    release_info = VerifiedPypiReleaseInfo(ReleaseResponse(info=sample_project_info, vulnerabilities=[vuln]))
+    release_info = VerifiedPypiReleaseInfo(ReleaseResponse(info=sample_project_info, vulnerabilities=[vuln]), "f.whl")
     vulnerability_details_service.get_details.return_value = VulnerabilityDetails(
         id="CVE-2023-1234", severity=severity, link="https://example.com/cve-2023-1234"
     )
@@ -98,7 +98,7 @@ async def test_withdrawn_vulnerability(checker):
         aliases=[],
         fixed_in=["2.32.0"],
     )
-    release_info = VerifiedPypiReleaseInfo(ReleaseResponse(info=sample_project_info, vulnerabilities=[vuln]))
+    release_info = VerifiedPypiReleaseInfo(ReleaseResponse(info=sample_project_info, vulnerabilities=[vuln]), "f.whl")
 
     result = await checker.check(release_info)
 
@@ -113,7 +113,7 @@ async def test_multiple_vulnerabilities(checker, vulnerability_details_service):
         VulnerabilityPypi(id="CVE-2M", withdrawn=None, aliases=[], fixed_in=["2.32.0"]),
         VulnerabilityPypi(id="CVE-3L", withdrawn=None, aliases=[], fixed_in=["2.32.0"]),
     ]
-    release_info = VerifiedPypiReleaseInfo(ReleaseResponse(info=sample_project_info, vulnerabilities=vulns))
+    release_info = VerifiedPypiReleaseInfo(ReleaseResponse(info=sample_project_info, vulnerabilities=vulns), "file.whl")
     details_map = {
         "CVE-1C": VulnerabilityDetails(id="CVE-1C", severity=VulnerabilitySeverity.CRITICAL),
         "CVE-2M": VulnerabilityDetails(id="CVE-2M", severity=VulnerabilitySeverity.MEDIUM),

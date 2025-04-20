@@ -23,7 +23,8 @@ async def test_repo_popularity_no_repo_url():
     repo_client = MagicMock(spec=RepoClient)
     checker = RepoPopularityChecker(repo_client)
     release_info = VerifiedPypiReleaseInfo(
-        ReleaseResponse(info=ProjectInfo(name=PACKAGE_NAME, version=PACKAGE_VERSION, project_urls=None))
+        ReleaseResponse(info=ProjectInfo(name=PACKAGE_NAME, version=PACKAGE_VERSION, project_urls=None)),
+        "file.whl",
     )
 
     result = await checker.check(release_info)
@@ -36,7 +37,7 @@ async def test_repo_popularity_no_repo_url():
 async def test_repo_not_found():
     repo_client = MagicMock(spec=RepoClient)
     checker = RepoPopularityChecker(repo_client)
-    release_info = VerifiedPypiReleaseInfo(RELEASE_RESPONSE_WITH_REPO_URL)
+    release_info = VerifiedPypiReleaseInfo(RELEASE_RESPONSE_WITH_REPO_URL, "file.whl",)
     repo_client.get_repo_info.return_value = None
 
     result = await checker.check(release_info)
@@ -49,7 +50,7 @@ async def test_repo_not_found():
 async def test_high_star_count():
     repo_client = MagicMock(spec=RepoClient)
     checker = RepoPopularityChecker(repo_client)
-    release_info = VerifiedPypiReleaseInfo(RELEASE_RESPONSE_WITH_REPO_URL)
+    release_info = VerifiedPypiReleaseInfo(RELEASE_RESPONSE_WITH_REPO_URL, "file.whl",)
     repo_client.get_repo_info.return_value = RepoInfo(star_count=1500)
 
     result = await checker.check(release_info)
@@ -61,7 +62,7 @@ async def test_high_star_count():
 async def test_medium_star_count():
     repo_client = MagicMock(spec=RepoClient)
     checker = RepoPopularityChecker(repo_client)
-    release_info = VerifiedPypiReleaseInfo(RELEASE_RESPONSE_WITH_REPO_URL)
+    release_info = VerifiedPypiReleaseInfo(RELEASE_RESPONSE_WITH_REPO_URL, "file.whl",)
     repo_client.get_repo_info.return_value = RepoInfo(star_count=500)
 
     result = await checker.check(release_info)
@@ -73,7 +74,7 @@ async def test_medium_star_count():
 async def test_low_star_count():
     repo_client = MagicMock(spec=RepoClient)
     checker = RepoPopularityChecker(repo_client)
-    release_info = VerifiedPypiReleaseInfo(RELEASE_RESPONSE_WITH_REPO_URL)
+    release_info = VerifiedPypiReleaseInfo(RELEASE_RESPONSE_WITH_REPO_URL, "file.whl",)
     repo_client.get_repo_info.return_value = RepoInfo(star_count=50)
 
     result = await checker.check(release_info)
