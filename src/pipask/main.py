@@ -77,14 +77,14 @@ def main(args: list[str] | None = None) -> None:
                 pip_report_task.update(False)
                 raise e
 
-            requested_packages = [package for package in pip_report.install if package.requested]
+            packages_to_install = pip_report.install
 
             # 3. Run checks on the dependencies to install
-            if len(requested_packages) > 0:
-                check_results = asyncio.run(execute_checks(requested_packages, progress))
+            if len(packages_to_install) > 0:
+                check_results = asyncio.run(execute_checks(packages_to_install, progress))
 
         # 4. Either delegate actual installation to pip or abort (based on the checks and user consent)
-        if len(requested_packages) == 0:
+        if len(packages_to_install) == 0:
             console.print("  No new packages to install\n")
             pip_pass_through(parsed_args.raw_args)
             return

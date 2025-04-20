@@ -159,12 +159,15 @@ def test_format_long_list_of_vulnerabilities():
         == "[red]CVE-1, CVE-2 (CRITICAL)[/red], [red]CVE-3 (HIGH)[/red], [default]CVE-4, CVE-5 (Low)[/default] and 2 more"
     )
 
+
 @pytest.mark.asyncio
 async def test_deduplicates_vulnerabilities(checker, vulnerability_details_service):
     vulns = [
         # These are real values seen for starlette==0.26.1
         VulnerabilityPypi(id="GHSA-v5gw-mw7f-84px", withdrawn=None, aliases=["CVE-2023-29159"], fixed_in=["2.32.0"]),
-        VulnerabilityPypi(id="PYSEC-2023-83", withdrawn=None, aliases=['CVE-2023-29159', 'GHSA-v5gw-mw7f-84px'], fixed_in=["2.32.0"]),
+        VulnerabilityPypi(
+            id="PYSEC-2023-83", withdrawn=None, aliases=["CVE-2023-29159", "GHSA-v5gw-mw7f-84px"], fixed_in=["2.32.0"]
+        ),
     ]
     release_info = VerifiedPypiReleaseInfo(ReleaseResponse(info=sample_project_info, vulnerabilities=vulns), "file.whl")
     details_map = {
@@ -179,4 +182,3 @@ async def test_deduplicates_vulnerabilities(checker, vulnerability_details_servi
         result_type=CheckResultType.FAILURE,
         message="Found the following vulnerabilities: [red]CVE-2023-29159 (HIGH)[/red]",
     )
-

@@ -46,4 +46,5 @@ class PackageCheckResults:
     name: str
     version: str
     results: list[CheckResult]
+    is_transitive_dependency: bool
     pypi_url: str | None = None
