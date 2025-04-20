@@ -171,7 +171,7 @@ async def test_medium_star_count_with_attestation():
     result = await checker.check(release_info)
 
     assert result.result_type == CheckResultType.WARNING
-    assert "[link=https://github.com/user/repo]Repository[/link] has less than 1000 stars: 500" in result.message
+    assert "[link=https://github.com/user/repo]Repository[/link] has less than 1000 stars: 500 stars" in result.message
 
 
 @pytest.mark.asyncio
@@ -189,4 +189,4 @@ async def test_low_star_count_with_attestation():
     result = await checker.check(release_info)
 
     assert result.result_type == CheckResultType.WARNING
-    assert result.message == "[bold][link=https://github.com/user/repo]Repository[/link] has less than 100 stars: 50"
+    assert result.message == "[bold][link=https://github.com/user/repo]Repository[/link] has less than 100 stars: 50 stars"

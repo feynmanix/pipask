@@ -15,7 +15,7 @@ import pytest
 from packaging.version import Version
 from resolvelib import ResolutionImpossible
 
-from pipask._vendor.pip._internal.exceptions import InstallationError
+from pipask._vendor.pip._internal.exceptions import DistributionNotFound, InstallationError
 from pipask._vendor.pip._internal.utils.urls import path_to_url
 from pipask.cli_args import InstallArgs
 from pipask.code_execution_guard import PackageCodeExecutionGuard
@@ -487,6 +487,35 @@ def test_install_report_complex_requirement(temp_venv_python_shared, clear_venv_
     assert len(report.install) > 4
     expected = get_pip_install_report_unsafe(args)
     _assert_same_reports(report, expected)
+
+
+@pytest.mark.integration
+def test_install_report_with_egg_fragment(temp_venv_python_shared, clear_venv_dependent_caches, monkeypatch):
+    egg_url = "git+https://github.com/feynmanix/pyfluent-iterables@1.2.0#egg=pyfluent-iterables"
+    args = _to_parsed_args(["install", egg_url])
+
+    mock_guard = MagicMock()
+    monkeypatch.setattr(PackageCodeExecutionGuard, "check_execution_allowed", mock_guard)
+
+    report = get_pip_install_report_from_pypi(args)
+
+    mock_guard.assert_any_call("pyfluent-iterables", "git+https://github.com/feynmanix/pyfluent-iterables@1.2.0")
+    assert len(report.install) == 1
+    _assert_metadata(report.install[0], "pyfluent-iterables", "1.2.0")
+    _assert_download_info(report.install[0], "https://github.com/feynmanix/pyfluent-iterables")
+    expected = get_pip_install_report_unsafe(args)
+    _assert_same_reports(report, expected)
+
+# @pytest.mark.integration
+def test_install_report_fails_with_invalid_egg_fragment(clear_venv_dependent_caches, monkeypatch):
+    egg_url = "git+https://github.com/feynmanix/pyfluent-iterables@1.2.0#egg=non-matching-name"
+    args = _to_parsed_args(["install", egg_url])
+
+    mock_guard = MagicMock()
+    monkeypatch.setattr(PackageCodeExecutionGuard, "check_execution_allowed", mock_guard)
+
+    with pytest.raises(DistributionNotFound):
+        get_pip_install_report_from_pypi(args)
 
 
 def _to_parsed_args(args: list[str]) -> InstallArgs:

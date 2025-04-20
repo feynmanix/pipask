@@ -46,12 +46,12 @@ class RepoPopularityChecker(Checker):
             elif repo_info.star_count > _BOLD_WARNING_THRESHOLD:
                 return CheckResult(
                     result_type=CheckResultType.WARNING,
-                    message=f"{formatted_repository} has less than 1000 stars: {repo_info.star_count}",
+                    message=f"{formatted_repository} has less than 1000 stars: {repo_info.star_count} stars",
                 )
             else:
                 return CheckResult(
                     result_type=CheckResultType.WARNING,
-                    message=f"[bold]{formatted_repository} has less than 100 stars: {repo_info.star_count}",
+                    message=f"[bold]{formatted_repository} has less than 100 stars: {repo_info.star_count} stars",
                 )
         elif project_urls is not None and (repo_url := project_urls.recognized_repo_url()) is not None:
             # We only have an UNVERIFIED link to the repository
