@@ -139,9 +139,25 @@ class DistributionsResponse(BaseModel):
     # versions: List[str]
 
 
-_pypi_url = PyPI.pypi_url
-_simple_url = PyPI.simple_url
+class Publisher(BaseModel):
+    # claims: Optional[dict] = None
+    kind: str
+    repository: str
+    workflow: Optional[str] = None
+    environment: Optional[str] = None
 
+
+class AttestationBundle(BaseModel):
+    publisher: Publisher
+
+
+class AttestationResponse(BaseModel):
+    attestation_bundles: List[AttestationBundle]
+    version: int
+
+
+_pypi_root_url = PyPI.url
+_pypi_url = PyPI.pypi_url
 _pypi_simple_url = PyPI.simple_url
 _pypi_file_storage_url = f"https://{PyPI.file_storage_domain}/packages/"
 
@@ -153,6 +169,11 @@ def _release_info_url(project_name: str, version: str) -> str:
 def _project_info_url(project_name: str) -> str:
     # See https://docs.pypi.org/api/json/#project-metadata for API documentation
     return f"{_pypi_url}/{project_name}/json"
+
+
+def _integrity_url(project_name: str, version: str, filename: str) -> str:
+    integrity_url = urllib.parse.urljoin(_pypi_root_url, "integrity")
+    return f"{integrity_url}/{project_name}/{version}/{filename}/provenance"
 
 
 @dataclass
@@ -230,6 +251,16 @@ class PypiClient:
         # No match found, we cannot reliably say the PyPI metadata belong to the package
         logger.debug(f"Hash of package {name} does not match any PyPI release hash")
         return None
+
+    async def get_attestations(self, package: InstallationReportItem) -> AttestationResponse | None:
+        # Make sure the package matches an actual PyPI release
+        verified_pypi_info = await self.get_matching_release_info(package)
+        if verified_pypi_info is None:
+            return None
+
+        url = _integrity_url(verified_pypi_info.name, verified_pypi_info.version, verified_pypi_info.release_filename)
+        headers = {"Accept": "application/vnd.pypi.integrity.v1+json"}
+        return await simple_get_request(url, self.client, AttestationResponse, headers=headers)
 
     async def get_distributions(self, project_name: str) -> DistributionsResponse | None:
         """Get all distribution download URLs for a project's available releases from PyPI."""
