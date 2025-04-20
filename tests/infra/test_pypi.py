@@ -16,6 +16,14 @@ from pipask.infra.pypi import (
     ReleaseResponse,
 )
 
+pyfluent_iterables_1_2_0_item = InstallationReportItem(
+    metadata=InstallationReportItemMetadata(name="pyfluent-iterables", version="1.2.0"),
+    download_info=InstallationReportItemDownloadInfo(
+        url="https://files.pythonhosted.org/packages/df/4d/cc7b682a9762b71280dddac077c300622f277d003db9e145e93ca6b2ad0d/pyfluent_iterables-1.2.0-py3-none-any.whl",
+    ),
+    requested=True,
+    is_direct=True,
+)
 
 @pytest.fixture
 async def pypi_client():
@@ -65,18 +73,7 @@ async def test_pypi_gets_distributions(pypi_client: PypiClient):
 
 @pytest.mark.integration
 async def test_pypi_matching_release_info_gets_pypi_file_info(pypi_client: PypiClient):
-    sha256_hash = "9187d020dc45d1888ea753fb6b5e48687b572ef573543dc65ebc780888b49104"
-    package = InstallationReportItem(
-        metadata=InstallationReportItemMetadata(name="pyfluent-iterables", version="1.2.0"),
-        download_info=InstallationReportItemDownloadInfo(
-            url="https://files.pythonhosted.org/packages/df/4d/cc7b682a9762b71280dddac077c300622f277d003db9e145e93ca6b2ad0d/pyfluent_iterables-1.2.0-py3-none-any.whl",
-            archive_info=InstallationReportArchiveInfo(hash=f"sha256={sha256_hash}"),
-        ),
-        requested=True,
-        is_direct=True,
-    )
-
-    result = await pypi_client.get_matching_release_info(package)
+    result = await pypi_client.get_matching_release_info(pyfluent_iterables_1_2_0_item)
     assert result is not None
     assert result.name == "pyfluent-iterables"
     assert result.version == "1.2.0"

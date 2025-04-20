@@ -142,6 +142,8 @@ class DistributionsResponse(BaseModel):
 _pypi_url = PyPI.pypi_url
 _simple_url = PyPI.simple_url
 
+_pypi_simple_url = PyPI.simple_url
+_pypi_file_storage_url = f"https://{PyPI.file_storage_domain}/packages/"
 
 def _release_info_url(project_name: str, version: str) -> str:
     # See https://docs.pypi.org/api/json/#get-a-release for API documentation
@@ -206,7 +208,7 @@ class PypiClient:
 
         # Note: similar logic is in fetch_metadata_from_pypi_is_available()
 
-        if package.download_info.url.startswith(PyPI.simple_url):
+        if package.download_info.url.startswith(_pypi_file_storage_url):
             # The package is from PyPI, so we can get the metadata directly
             filename = urllib.parse.urlparse(package.download_info.url).path.split("/")[-1]
             return VerifiedPypiReleaseInfo(pypi_release_info, filename)
@@ -232,7 +234,7 @@ class PypiClient:
     async def get_distributions(self, project_name: str) -> DistributionsResponse | None:
         """Get all distribution download URLs for a project's available releases from PyPI."""
         # See https://docs.pypi.org/api/index-api/#get-distributions-for-project
-        url = f"{_simple_url}/{project_name}/"
+        url = f"{_pypi_simple_url}/{project_name}/"
         headers = {"Accept": "application/vnd.pypi.simple.v1+json"}
         return await simple_get_request(url, self.client, DistributionsResponse, headers=headers)
 
