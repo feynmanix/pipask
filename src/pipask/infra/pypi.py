@@ -139,7 +139,7 @@ class DistributionsResponse(BaseModel):
     # versions: List[str]
 
 
-class Publisher(BaseModel):
+class AttestationPublisher(BaseModel):
     # claims: Optional[dict] = None
     kind: str
     repository: str
@@ -148,7 +148,7 @@ class Publisher(BaseModel):
 
 
 class AttestationBundle(BaseModel):
-    publisher: Publisher
+    publisher: AttestationPublisher
 
 
 class AttestationResponse(BaseModel):
@@ -160,6 +160,7 @@ _pypi_root_url = PyPI.url
 _pypi_url = PyPI.pypi_url
 _pypi_simple_url = PyPI.simple_url
 _pypi_file_storage_url = f"https://{PyPI.file_storage_domain}/packages/"
+
 
 def _release_info_url(project_name: str, version: str) -> str:
     # See https://docs.pypi.org/api/json/#get-a-release for API documentation
@@ -252,13 +253,10 @@ class PypiClient:
         logger.debug(f"Hash of package {name} does not match any PyPI release hash")
         return None
 
-    async def get_attestations(self, package: InstallationReportItem) -> AttestationResponse | None:
-        # Make sure the package matches an actual PyPI release
-        verified_pypi_info = await self.get_matching_release_info(package)
-        if verified_pypi_info is None:
-            return None
-
-        url = _integrity_url(verified_pypi_info.name, verified_pypi_info.version, verified_pypi_info.release_filename)
+    async def get_attestations(self, verified_release_info: VerifiedPypiReleaseInfo) -> AttestationResponse | None:
+        url = _integrity_url(
+            verified_release_info.name, verified_release_info.version, verified_release_info.release_filename
+        )
         headers = {"Accept": "application/vnd.pypi.integrity.v1+json"}
         return await simple_get_request(url, self.client, AttestationResponse, headers=headers)
 

@@ -1,5 +1,4 @@
 from datetime import datetime
-from unittest.mock import AsyncMock
 
 import httpx
 import pytest
@@ -16,9 +15,6 @@ from pipask.infra.pypi import (
     PypiClient,
     ReleaseResponse,
     VerifiedPypiReleaseInfo,
-    AttestationResponse,
-    AttestationBundle,
-    Publisher,
 )
 
 pyfluent_iterables_1_2_0_item = InstallationReportItem(
@@ -29,6 +25,7 @@ pyfluent_iterables_1_2_0_item = InstallationReportItem(
     requested=True,
     is_direct=True,
 )
+
 
 @pytest.fixture
 async def pypi_client():
@@ -47,13 +44,16 @@ async def test_pypi_gets_non_existent_project_info(pypi_client: PypiClient):
 @pytest.mark.parametrize(
     "project_name,expected_url",
     [
-        ("pyfluent-iterables", "https://github.com/feynmanix/pyfluent-iterables"),  # Intentionally using an obsolete URL
+        (
+            "pyfluent-iterables",
+            "https://github.com/feynmanix/pyfluent-iterables",
+        ),  # Intentionally using an obsolete URL
         ("fastapi", "https://github.com/fastapi/fastapi"),
         ("torch", "https://github.com/pytorch/pytorch"),
         ("huggingface-hub", "https://github.com/huggingface/huggingface_hub"),
         ("ase", "https://gitlab.com/ase/ase"),
         ("pip-tools", "https://github.com/jazzband/pip-tools"),
-        ("PIPS", None)
+        ("PIPS", None),
     ],
 )
 async def test_pypi_gets_source_repo(pypi_client: PypiClient, project_name: str, expected_url: str | None):
@@ -167,18 +167,14 @@ async def test_pypi_matching_release_info_handles_non_existent_project(
 
     assert info is None
 
+
 @pytest.mark.integration
 async def test_pypi_gets_attestation_for_pypi_download(pypi_client: PypiClient):
-    package = InstallationReportItem(
-        metadata=InstallationReportItemMetadata(name="pyfluent-iterables", version="2.0.1"),
-        download_info=InstallationReportItemDownloadInfo(
-            url="https://files.pythonhosted.org/packages/e1/cc/704f1f0830f24c37dc60898624c16ceb270ef51d5ec7a7e144539ead80d0/pyfluent_iterables-2.0.1-py3-none-any.whl",
-        ),
-        requested=True,
-        is_direct=True,
+    release_info = VerifiedPypiReleaseInfo(
+        ReleaseResponse(info=ProjectInfo(name="pyfluent-iterables", version="2.0.1")),
+        "pyfluent_iterables-2.0.1-py3-none-any.whl",
     )
-
-    result = await pypi_client.get_attestations(package)
+    result = await pypi_client.get_attestations(release_info)
     assert result is not None
     assert len(result.attestation_bundles) == 1
     publisher = result.attestation_bundles[0].publisher
@@ -186,45 +182,13 @@ async def test_pypi_gets_attestation_for_pypi_download(pypi_client: PypiClient):
     assert publisher.repository == "feynmanix/pyfluent-iterables"
 
 
-@pytest.mark.parametrize("mocked_release_info", [
-    VerifiedPypiReleaseInfo(ReleaseResponse(info=ProjectInfo(name="test-package", version="1.0.0")), "test-package-1.0.0.whl"),
-    None
-])
-async def test_pypi_gets_attestation_only_when_matching_release_exists(mocked_release_info):
-    package = InstallationReportItem(
-        metadata=InstallationReportItemMetadata(name="test-package", version="1.0.0"),
-        download_info=InstallationReportItemDownloadInfo(url="https://example.com/test-package-1.0.0.whl"),
-        requested=True,
-        is_direct=True,
-    )
-
-    # Mock the PyPI response
-    mock_attestation_response = AttestationResponse(
-        attestation_bundles=[AttestationBundle(publisher=Publisher(kind="GitHub", repository="test-package"))],
-        version=1,
-    )
-    def mock_handler(_req):
-        return httpx.Response(200, json=mock_attestation_response.model_dump(mode="json", by_alias=True))
-
-    # Mock release info existence
-    pypi_client = PypiClient(transport=(httpx.MockTransport(mock_handler)))
-    pypi_client.get_matching_release_info = AsyncMock(return_value=mocked_release_info)
-
-    # Act
-    result = await pypi_client.get_attestations(package)
-    if mocked_release_info is not None:
-        assert result is not None
-        assert result.attestation_bundles[0].publisher.kind == "GitHub"
-        assert result.attestation_bundles[0].publisher.repository == "test-package"
-    else:
-        assert result is None
-
-
 @pytest.mark.integration
 async def test_pypi_matching_release_info_handles_release_without_attestation(pypi_client: PypiClient):
     # The release exists on pypi but does not have an attestation
-    info = await pypi_client.get_matching_release_info(pyfluent_iterables_1_2_0_item)
-    assert info is not None # assert the empty result is not because the release does not exist
+    release_info = VerifiedPypiReleaseInfo(
+        ReleaseResponse(info=ProjectInfo(name="pyfluent-iterables", version="1.2.0")),
+        "pyfluent_iterables-1.2.0-py3-none-any.whl",
+    )
 
-    attestation = await pypi_client.get_attestations(pyfluent_iterables_1_2_0_item)
+    attestation = await pypi_client.get_attestations(release_info)
     assert attestation is None

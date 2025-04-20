@@ -49,7 +49,7 @@ class ChecksExecutor:
     ):
         self._pypi_client = pypi_client
         self._checkers = [
-            RepoPopularityChecker(repo_client),
+            RepoPopularityChecker(repo_client, pypi_client),
             PackageDownloadsChecker(pypi_stats_client),
             PackageAge(pypi_client),
             ReleaseVulnerabilityChecker(vulnerability_details_service),
