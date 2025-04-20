@@ -189,4 +189,6 @@ async def test_low_star_count_with_attestation():
     result = await checker.check(release_info)
 
     assert result.result_type == CheckResultType.WARNING
-    assert result.message == "[bold][link=https://github.com/user/repo]Repository[/link] has less than 100 stars: 50 stars"
+    assert (
+        result.message == "[bold][link=https://github.com/user/repo]Repository[/link] has less than 100 stars: 50 stars"
+    )

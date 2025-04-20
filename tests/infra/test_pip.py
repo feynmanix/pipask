@@ -506,7 +506,8 @@ def test_install_report_with_egg_fragment(temp_venv_python_shared, clear_venv_de
     expected = get_pip_install_report_unsafe(args)
     _assert_same_reports(report, expected)
 
-# @pytest.mark.integration
+
+@pytest.mark.integration
 def test_install_report_fails_with_invalid_egg_fragment(clear_venv_dependent_caches, monkeypatch):
     egg_url = "git+https://github.com/feynmanix/pyfluent-iterables@1.2.0#egg=non-matching-name"
     args = _to_parsed_args(["install", egg_url])
