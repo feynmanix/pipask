@@ -29,8 +29,9 @@ class ReleaseVulnerabilityChecker(Checker):
         vulnerability_details = await asyncio.gather(
             *(self._vulnerability_details_service.get_details(v) for v in relevant_vulnerabilities)
         )
-        worst_severity = VulnerabilitySeverity.get_worst(*(v.severity for v in vulnerability_details))
-        formatted_vulnerabilities = _format_vulnerabilities(vulnerability_details)
+        deduplicated_vulnerability_details = {v.id: v for v in vulnerability_details if v.id is not None}.values()
+        worst_severity = VulnerabilitySeverity.get_worst(*(v.severity for v in deduplicated_vulnerability_details))
+        formatted_vulnerabilities = _format_vulnerabilities(deduplicated_vulnerability_details)
         return CheckResult(
             result_type=worst_severity.result_type if worst_severity is not None else CheckResultType.WARNING,
             message=f"Found the following vulnerabilities: {formatted_vulnerabilities}",
