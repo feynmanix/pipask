@@ -10,7 +10,7 @@ from pipask.checks.repo_popularity import RepoPopularityChecker
 from pipask.checks.types import CheckResult, CheckResultType, PackageCheckResults
 from pipask.checks.vulnerabilities import ReleaseVulnerabilityChecker
 from pipask.cli_helpers import SimpleTaskProgress
-from pipask.infra.pip_report import InstallationReportItem
+from pipask.infra.pip_types import InstallationReportItem
 from pipask.infra.pypi import PypiClient, VerifiedPypiReleaseInfo
 from pipask.infra.pypistats import PypiStatsClient
 from pipask.infra.repo_client import RepoClient

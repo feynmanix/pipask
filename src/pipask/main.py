@@ -24,7 +24,7 @@ from pipask.infra.pip import (
     parse_pip_install_arguments,
     pip_pass_through,
 )
-from pipask.infra.pip_report import InstallationReportItem, PipInstallReport
+from pipask.infra.pip_types import InstallationReportItem, PipInstallReport
 from pipask.infra.pypi import PypiClient
 from pipask.infra.pypistats import PypiStatsClient
 from pipask.infra.repo_client import RepoClient

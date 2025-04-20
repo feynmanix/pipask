@@ -3,7 +3,7 @@ from datetime import datetime
 import httpx
 import pytest
 
-from pipask.infra.pip_report import (
+from pipask.infra.pip_types import (
     InstallationReportArchiveInfo,
     InstallationReportItem,
     InstallationReportItemDownloadInfo,

@@ -9,7 +9,7 @@ from pydantic import BaseModel, Field
 
 from pipask._vendor.pip._internal.models.index import PyPI  # type: ignore
 from pipask._vendor.pip._internal.network.session import PipSession  # type: ignore
-from pipask.infra.pip_report import InstallationReportItem
+from pipask.infra.pip_types import InstallationReportItem
 from pipask.infra.repo_client import REPO_URL_REGEX
 from pipask.utils import simple_get_request, simple_get_request_sync
 

@@ -27,7 +27,7 @@ from pipask.infra.pip import (
     parse_pip_arguments,
     parse_pip_install_arguments,
 )
-from pipask.infra.pip_report import InstallationReportItem, PipInstallReport
+from pipask.infra.pip_types import InstallationReportItem, PipInstallReport
 from tests.conftest import with_venv_python
 
 temp_venv_python_shared = pytest.fixture(scope="module")(with_venv_python)

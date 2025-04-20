@@ -20,7 +20,7 @@ from pipask._vendor.pip._internal.utils.temp_dir import (
 from pipask.cli_args import InstallArgs, PipCommandArgs
 from pipask.exception import HandoverToPipException, PipaskException
 from pipask.infra.executables import get_pip_command
-from pipask.infra.pip_report import (
+from pipask.infra.pip_types import (
     InstallationReportItem,
     InstallationReportItemDownloadInfo,
     InstallationReportItemMetadata,
