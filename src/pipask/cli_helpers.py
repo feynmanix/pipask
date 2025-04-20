@@ -22,9 +22,11 @@ class CheckTask:
 
     def show(self):
         self._progress.update(self._task_id, visible=True)
+        self._progress.start()
 
     def hide(self):
         self._progress.update(self._task_id, visible=False)
+        self._progress.stop()
 
     def start(self):
         self._progress.start_task(self._task_id)

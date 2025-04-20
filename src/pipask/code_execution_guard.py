@@ -43,7 +43,7 @@ class PackageCodeExecutionGuard:
             progress_task.hide()
 
         message = f"Unable to resolve dependencies without preparing a source distribution.\nIf you continue, 3rd party code may be executed before pipask can run checks on it{package_detail_message}.\nWould you like to continue?"
-        if Confirm.ask(f"\n[yellow]{message}[/yellow] [purple]\\[y/n][/purple]\n", choices=["y", "n"]):
+        if Confirm.ask(f"\n[yellow]{message}[/yellow]", choices=["y", "n"]):
             PackageCodeExecutionGuard._execution_allowed.set(True)
             if progress_task:
                 progress_task.show()
