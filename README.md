@@ -18,7 +18,7 @@ pip install pipask
     ```bash
     pipask install 'requests>=2.0.0'
     ```
-2. `pipask` will perform checks on the requested packages to be installed (i.e., it will *not* check *transitive* dependencies).
+2. `pipask` will perform checks on the packages to be installed.
 3. You will get a report with the results and be prompted whether to continue with the installation.
 4. If you proceed, `pipask` will hand over the actual installation to `pip`.
 
@@ -40,7 +40,9 @@ alias pip='pipask'
 * Number of downloads from PyPI in the last month (warning below 1000 downloads; take this with a grain of sault for reasons outlined in [PyPI documentation](https://packaging.python.org/en/latest/guides/analyzing-pypi-package-downloads/))
 * License availability
 
-More checks will be added in the future. Feel free to contribute or open an issue to request a check.
+All checks are executed for requested (i.e., explicitly specified) packages. Only the known vulnerabilities check is executed for transitive dependencies.
+
+Feel free to contribute or open an issue to request more checks.
 
 # Development
 See [CONTRIBUTING.md](https://github.com/feynmanix/pipask/blob/main/CONTRIBUTING.md) for development guidance.
