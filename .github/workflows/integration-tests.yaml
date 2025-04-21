@@ -29,3 +29,33 @@ jobs:
         run: |
           poetry run pytest -vv --integration
 
+  tests-pip:
+    name: 'Integration tests for different pip versions'
+    strategy:
+      matrix:
+        # pip install --report was introduced in 22.2; older versions might work but not for integration tests
+        pip_version: [ '22', '23', '25' ]
+        python_version: [ '3.12' ]
+        os: [ ubuntu-latest ]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python_version }}
+
+      - name: Install dependencies
+        run: |
+          pipx install poetry
+          poetry install --no-interaction
+          poetry run pip install pip~=${{ matrix.pip_version }}.0
+
+      - name: Run tests
+        env:
+          PIPASK_TEST_PIP_VERSION: ${{ matrix.pip_version }}.0 # needed for venvs created by integration tests
+        run: |
+          poetry run pip --version
+          poetry run pytest -vv --integration

@@ -541,6 +541,9 @@ def _assert_download_info(
 
 
 def _normalize_report(report: PipInstallReport):
+    if report.version == "0":
+        # should be the same, version was bumped in 23.0: https://pip.pypa.io/en/stable/reference/installation-report/
+        report.version = "1"
     report.install = sorted(report.install, key=lambda i: i.metadata.name)
     for i in report.install:
         i.metadata.classifier = sorted(i.metadata.classifier)
