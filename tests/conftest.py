@@ -1,6 +1,5 @@
 import importlib
 import os
-import subprocess
 import venv
 from contextlib import contextmanager
 from pathlib import Path
@@ -54,9 +53,6 @@ def with_venv_python(tmp_path_factory: TempPathFactory):
     path_env_var = str(venv_path / platform_scripts_dir) + os.pathsep + os.environ["PATH"]
     with patch.dict(os.environ, {"PATH": path_env_var, "VIRTUAL_ENV": str(venv_path)}):
         os.environ.pop("PYTHONHOME", None)
-        pip_version_override = os.environ.get("PIPASK_TEST_PIP_VERSION", None)
-        if pip_version_override:
-            print(subprocess.check_output([venv_python, "-m", "pip", "install", f"pip~={pip_version_override}"]))
         yield venv_python
 
 
