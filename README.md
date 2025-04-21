@@ -27,10 +27,7 @@ To run checks without installing, you can use the `--dry-run` flag:
 pipask install requests --dry-run
 ```
 
-In order to use `pipask` as a drop-in replacement for `pip`, you can create an alias:
-```bash
-alias pip='pipask'
-```
+In order to use `pipask` as a drop-in replacement for pip, you can alias pip to point to pipask so you don't have to remember to use it. Just add `alias pip='pipask'` to your shell configuration file (`~/.bashrc` , `~/.bash_profile`, `~/.zshrc`, etc.). You can always fall back on your native pip with `python -m pip` if `pipask` doesn't work for any reason.
 
 # Checks
 * Popularity of the source repository as measured by the number of stars on GitHub or GitLab (warning below 1000 stars)
