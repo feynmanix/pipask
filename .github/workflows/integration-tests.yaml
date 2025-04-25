@@ -1,7 +1,8 @@
 name: Integration Tests
 on:
   workflow_dispatch: # on demand:
-
+permissions:
+  contents: read
 
 jobs:
   tests:
