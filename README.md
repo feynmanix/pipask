@@ -47,3 +47,4 @@ Feel free to contribute or open an issue to request more checks.
 
 # Development
 See [CONTRIBUTING.md](https://github.com/feynmanix/pipask/blob/main/CONTRIBUTING.md) for development guidance.
+
