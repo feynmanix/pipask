@@ -265,8 +265,9 @@ def setup_logging(verbosity: int, no_color: bool, user_log_file: Optional[str]) 
         "stderr": "ext://sys.stderr",
     }
     handler_classes = {
-        "stream": "pip._internal.utils.logging.RichPipStreamHandler",
-        "file": "pip._internal.utils.logging.BetterRotatingFileHandler",
+        # MODIFIED for pipask
+        "stream": "pipask._vendor.pip._internal.utils.logging.RichPipStreamHandler",
+        "file": "pipask._vendor.pip._internal.utils.logging.BetterRotatingFileHandler",
     }
     handlers = ["console", "console_errors", "console_subprocess"] + (
         ["user_log"] if include_user_log else []
@@ -278,7 +279,8 @@ def setup_logging(verbosity: int, no_color: bool, user_log_file: Optional[str]) 
             "disable_existing_loggers": False,
             "filters": {
                 "exclude_warnings": {
-                    "()": "pip._internal.utils.logging.MaxLevelFilter",
+                    # MODIFIED for pipask
+                    "()": "pipask._vendor.pip._internal.utils.logging.MaxLevelFilter",
                     "level": logging.WARNING,
                 },
                 "restrict_to_subprocess": {
@@ -286,7 +288,8 @@ def setup_logging(verbosity: int, no_color: bool, user_log_file: Optional[str]) 
                     "name": subprocess_logger.name,
                 },
                 "exclude_subprocess": {
-                    "()": "pip._internal.utils.logging.ExcludeLoggerFilter",
+                    # MODIFIED for pipask
+                    "()": "pipask._vendor.pip._internal.utils.logging.ExcludeLoggerFilter",
                     "name": subprocess_logger.name,
                 },
             },
@@ -341,7 +344,8 @@ def setup_logging(verbosity: int, no_color: bool, user_log_file: Optional[str]) 
                 "level": root_level,
                 "handlers": handlers,
             },
-            "loggers": {"pip._vendor": {"level": vendored_log_level}},
+            # MODIFIED for pipask
+            "loggers": {"pipask._vendor.pip._vendor": {"level": vendored_log_level}},
         }
     )
 

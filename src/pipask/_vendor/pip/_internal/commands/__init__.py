@@ -15,89 +15,90 @@ CommandInfo = namedtuple("CommandInfo", "module_path, class_name, summary")
 # Even though the module path starts with the same "pip._internal.commands"
 # prefix, the full path makes testing easier (specifically when modifying
 # `commands_dict` in test setup / teardown).
+# MODIFIED for pipask - changed package path to pipask._vendor...
 commands_dict: Dict[str, CommandInfo] = {
     "install": CommandInfo(
-        "pip._internal.commands.install",
+        "pipask._vendor.pip._internal.commands.install",
         "InstallCommand",
         "Install packages.",
     ),
     "download": CommandInfo(
-        "pip._internal.commands.download",
+        "pipask._vendor.pip._internal.commands.download",
         "DownloadCommand",
         "Download packages.",
     ),
     "uninstall": CommandInfo(
-        "pip._internal.commands.uninstall",
+        "pipask._vendor.pip._internal.commands.uninstall",
         "UninstallCommand",
         "Uninstall packages.",
     ),
     "freeze": CommandInfo(
-        "pip._internal.commands.freeze",
+        "pipask._vendor.pip._internal.commands.freeze",
         "FreezeCommand",
         "Output installed packages in requirements format.",
     ),
     "inspect": CommandInfo(
-        "pip._internal.commands.inspect",
+        "pipask._vendor.pip._internal.commands.inspect",
         "InspectCommand",
         "Inspect the python environment.",
     ),
     "list": CommandInfo(
-        "pip._internal.commands.list",
+        "pipask._vendor.pip._internal.commands.list",
         "ListCommand",
         "List installed packages.",
     ),
     "show": CommandInfo(
-        "pip._internal.commands.show",
+        "pipask._vendor.pip._internal.commands.show",
         "ShowCommand",
         "Show information about installed packages.",
     ),
     "check": CommandInfo(
-        "pip._internal.commands.check",
+        "pipask._vendor.pip._internal.commands.check",
         "CheckCommand",
         "Verify installed packages have compatible dependencies.",
     ),
     "config": CommandInfo(
-        "pip._internal.commands.configuration",
+        "pipask._vendor.pip._internal.commands.configuration",
         "ConfigurationCommand",
         "Manage local and global configuration.",
     ),
     "search": CommandInfo(
-        "pip._internal.commands.search",
+        "pipask._vendor.pip._internal.commands.search",
         "SearchCommand",
         "Search PyPI for packages.",
     ),
     "cache": CommandInfo(
-        "pip._internal.commands.cache",
+        "pipask._vendor.pip._internal.commands.cache",
         "CacheCommand",
         "Inspect and manage pip's wheel cache.",
     ),
     "index": CommandInfo(
-        "pip._internal.commands.index",
+        "pipask._vendor.pip._internal.commands.index",
         "IndexCommand",
         "Inspect information available from package indexes.",
     ),
     "wheel": CommandInfo(
-        "pip._internal.commands.wheel",
+        "pipask._vendor.pip._internal.commands.wheel",
         "WheelCommand",
         "Build wheels from your requirements.",
     ),
     "hash": CommandInfo(
-        "pip._internal.commands.hash",
+        "pipask._vendor.pip._internal.commands.hash",
         "HashCommand",
         "Compute hashes of package archives.",
     ),
     "completion": CommandInfo(
-        "pip._internal.commands.completion",
+        "pipask._vendor.pip._internal.commands.completion",
         "CompletionCommand",
         "A helper command used for command completion.",
     ),
     "debug": CommandInfo(
-        "pip._internal.commands.debug",
+        "pipask._vendor.pip._internal.commands.debug",
         "DebugCommand",
         "Show information useful for debugging.",
     ),
     "help": CommandInfo(
-        "pip._internal.commands.help",
+        "pipask._vendor.pip._internal.commands.help",
         "HelpCommand",
         "Show help for commands.",
     ),
