@@ -1,5 +1,3 @@
-from functools import cache
-
 import requests
 import time
 import logging
