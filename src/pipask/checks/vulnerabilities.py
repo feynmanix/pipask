@@ -5,6 +5,7 @@ from pipask.checks.base_checker import Checker
 from pipask.checks.types import CheckResult, CheckResultType
 from pipask.infra.pypi import VerifiedPypiReleaseInfo
 from pipask.infra.vulnerability_details import VulnerabilityDetails, VulnerabilityDetailsService, VulnerabilitySeverity
+from pipask.utils import format_link
 
 MAX_DISPLAYED_VULNERABILITIES = 5
 
@@ -54,9 +55,7 @@ def _format_vulnerabilities(vulnerabilities: list[VulnerabilityDetails]) -> str:
         if severity not in by_severity:
             continue
         formatted_ids = [
-            f"[link={vuln.link}]{vuln.id}[/link]" if vuln.link else vuln.id  #
-            for vuln in by_severity[severity]
-            if vuln.id is not None
+            format_link(vuln.id, vuln.link, fallback=True) for vuln in by_severity[severity] if vuln.id is not None
         ]
         color = severity.result_type.rich_color if severity is not None else "default"
         formatted_severity = severity.value if severity is not None else "unknown severity"

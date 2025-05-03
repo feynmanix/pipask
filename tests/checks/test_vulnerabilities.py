@@ -70,7 +70,10 @@ async def test_no_vulnerabilities(checker):
         ),
     ],
 )
-async def test_single_vulnerability(checker, vulnerability_details_service, severity, result_type, message):
+async def test_single_vulnerability(
+    checker, vulnerability_details_service, severity, result_type, message, monkeypatch
+):
+    monkeypatch.setattr("pipask.utils._HYPERLINKS_NOT_SUPPORTED", False)
     vuln = VulnerabilityPypi(
         id="CVE-2023-1234",
         withdrawn=None,
@@ -130,7 +133,8 @@ async def test_multiple_vulnerabilities(checker, vulnerability_details_service):
     )
 
 
-def test_format_vulnerabilities():
+def test_format_vulnerabilities(monkeypatch):
+    monkeypatch.setattr("pipask.utils._HYPERLINKS_NOT_SUPPORTED", False)
     vulnerabilities = [
         VulnerabilityDetails(id="CVE-2", link="https://example.com/cve-2", severity=VulnerabilitySeverity.HIGH),
         VulnerabilityDetails(id="CVE-1", link="https://example.com/cve-1", severity=VulnerabilitySeverity.CRITICAL),

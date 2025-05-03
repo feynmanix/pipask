@@ -1,6 +1,7 @@
 from rich.console import Console
 
 from pipask.checks.types import CheckResultType, PackageCheckResults
+from pipask.utils import format_link
 
 
 def _get_worst_result(package_result: PackageCheckResults) -> CheckResultType:
@@ -12,7 +13,7 @@ def _get_worst_result(package_result: PackageCheckResults) -> CheckResultType:
 def _format_requirement_heading(package_result: PackageCheckResults) -> str:
     worst_result_color = _get_worst_result(package_result).rich_color
     formatted_requirement = (
-        f"{package_result.name}==[link={package_result.pypi_url}]{package_result.version}[/link]"
+        f"{package_result.name}=={format_link(package_result.version, package_result.pypi_url)}"
         if package_result.pypi_url
         else f"{package_result.name}=={package_result.version}"
     )

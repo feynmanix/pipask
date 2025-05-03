@@ -112,7 +112,8 @@ async def test_repo_not_found_with_attestation():
 
 
 @pytest.mark.asyncio
-async def test_unverified_repo_url():
+async def test_unverified_repo_url(monkeypatch):
+    monkeypatch.setattr("pipask.utils._HYPERLINKS_NOT_SUPPORTED", False)
     repo_client = MagicMock(spec=RepoClient)
     pypi_client = MagicMock(spec=PypiClient)
     pypi_client.get_attestations = AsyncMock(return_value=None)
@@ -138,7 +139,8 @@ async def test_unverified_repo_url():
 
 
 @pytest.mark.asyncio
-async def test_high_star_count_with_attestation():
+async def test_high_star_count_with_attestation(monkeypatch):
+    monkeypatch.setattr("pipask.utils._HYPERLINKS_NOT_SUPPORTED", False)
     repo_client = MagicMock(spec=RepoClient)
     pypi_client = MagicMock(spec=PypiClient)
     pypi_client.get_attestations = AsyncMock(return_value=GITHUB_ATTESTATION)
@@ -157,7 +159,8 @@ async def test_high_star_count_with_attestation():
 
 
 @pytest.mark.asyncio
-async def test_medium_star_count_with_attestation():
+async def test_medium_star_count_with_attestation(monkeypatch):
+    monkeypatch.setattr("pipask.utils._HYPERLINKS_NOT_SUPPORTED", False)
     repo_client = MagicMock(spec=RepoClient)
     pypi_client = MagicMock(spec=PypiClient)
     pypi_client.get_attestations = AsyncMock(return_value=GITHUB_ATTESTATION)
@@ -175,7 +178,8 @@ async def test_medium_star_count_with_attestation():
 
 
 @pytest.mark.asyncio
-async def test_low_star_count_with_attestation():
+async def test_low_star_count_with_attestation(monkeypatch):
+    monkeypatch.setattr("pipask.utils._HYPERLINKS_NOT_SUPPORTED", False)
     repo_client = MagicMock(spec=RepoClient)
     pypi_client = MagicMock(spec=PypiClient)
     pypi_client.get_attestations = AsyncMock(return_value=GITHUB_ATTESTATION)
