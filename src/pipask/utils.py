@@ -58,8 +58,7 @@ def simple_get_request_sync(
     return response_model.model_validate(response.json())
 
 
-@cache
-def terminal_does_not_support_hyperlinks():
+def _terminal_does_not_support_hyperlinks():
     """
     Determine when we can be fairly certain that OSC 8 hyperlinks are NOT supported (can have false negatives).
     """
@@ -99,9 +98,12 @@ def terminal_does_not_support_hyperlinks():
     return False
 
 
+_HYPERLINKS_NOT_SUPPORTED = _terminal_does_not_support_hyperlinks()
+
+
 def format_link(text: str, url: str | None, fallback: bool = False) -> str:
     if not url:
         return text
-    if terminal_does_not_support_hyperlinks():
+    if _HYPERLINKS_NOT_SUPPORTED:
         return f"{text} [{url}]" if fallback else text
     return f"[link={url}]{text}[/link]"
