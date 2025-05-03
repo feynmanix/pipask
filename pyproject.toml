@@ -1,6 +1,6 @@
 [project]
 name = "pipask"
-version = "0.9.2"
+version = "0.9.3"
 description = "Safer python package installation with audit and consent before install"
 authors = [
     { name = "Feynmanix", email = "feynmanix@users.noreply.github.com" },
@@ -62,7 +62,7 @@ requires = ["poetry-core>=2.0.0,<3.0.0"]
 build-backend = "poetry.core.masonry.api"
 
 [tool.bumpver]
-current_version = "0.9.2"
+current_version = "0.9.3"
 version_pattern = "MAJOR.MINOR.PATCH[PYTAGNUM]"
 commit_message = "bump version {old_version} -> {new_version}"
 commit = true
