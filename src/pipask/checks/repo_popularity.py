@@ -4,6 +4,8 @@ from pipask.infra.pypi import AttestationPublisher, PypiClient, VerifiedPypiRele
 from pipask.infra.repo_client import RepoClient
 import logging
 
+from pipask.utils import format_link
+
 _WARNING_THRESHOLD = 1000
 _BOLD_WARNING_THRESHOLD = 100
 
@@ -37,7 +39,7 @@ class RepoPopularityChecker(Checker):
                     result_type=CheckResultType.FAILURE,
                     message=f"Source repository not found: [link={repo_url}]{repo_url}[/link]",
                 )
-            formatted_repository = f"[link={repo_url}]Repository[/link]"
+            formatted_repository = format_link("Repository", repo_url, fallback=True)
             if repo_info.star_count > _WARNING_THRESHOLD:
                 return CheckResult(
                     result_type=CheckResultType.SUCCESS,
@@ -55,10 +57,10 @@ class RepoPopularityChecker(Checker):
                 )
         elif project_urls is not None and (repo_url := project_urls.recognized_repo_url()) is not None:
             # We only have an UNVERIFIED link to the repository
-            formatted_repository = f"[link={repo_url}]repository[/link]"
+            formatted_repository = format_link("repository", repo_url, fallback=True)
             return CheckResult(
                 result_type=CheckResultType.WARNING,
-                message=f"Unverified link to source [link={repo_url}]repository[/link] (true origin may be different)",
+                message=f"Unverified link to source {formatted_repository} (true origin may be different)",
             )
         else:
             # No recognized link to the source repository
