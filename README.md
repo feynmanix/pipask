@@ -66,7 +66,8 @@ Under the hood, pipask:
    - Vulnerability details from OSV.dev
    - Attestation metadata from PyPI integrity API
 4. Presents a formatted report and asks for consent
-5. Hands over to standard pip for the actual installation if approved
+   - _Tip: You may notice some parts of the report are underlined on supported terminals. These are hyperlinks you can open (e.g., with Cmd+click in iTerm)_
+6. Hands over to standard pip for the actual installation if approved
 
 ## Development
 See [CONTRIBUTING.md](https://github.com/feynmanix/pipask/blob/main/CONTRIBUTING.md) for development guidance.
