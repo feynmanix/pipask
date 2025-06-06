@@ -46,10 +46,10 @@ pipask install requests --dry-run
 
 Pipask performs these checks before allowing installation:
 
-* **Repository popularity** - verification of links from PyPI to repositories, number of stars on GitHub or GitLab source repo (warning below 1000 stars)
+* **Repository popularity** - verification of links from PyPI to repositories, number of stars on GitHub or GitLab source repo (warning below 1000 stars with bold warning below 100)
 * **Package and release age** - warning for new packages (less than 22 days old) or stale releases (older than 365 days)
 * **Known vulnerabilities** in the package available in PyPI (failure for HIGH or CRITICAL vulnerabilities, warning for MODERATE vulnerabilities)
-* **Number of downloads** from PyPI in the last month (warning below 1000 downloads)
+* **Number of downloads** from PyPI in the last month (failure below 100 downloads and warning below 5000)
 * **Metadata verification**: Checks for license availability, development status, and yanked packages
 
 All checks are executed for requested (i.e., explicitly specified) packages. Only the known vulnerabilities check is executed for transitive dependencies.
