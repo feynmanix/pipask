@@ -75,14 +75,14 @@ yaml = ["PyYAML"]
 
 [[package]]
 name = "bumpver"
-version = "2024.1130"
+version = "2025.1131"
 description = "Bump version numbers in project files."
 optional = false
 python-versions = ">=2.7"
 groups = ["dev"]
 files = [
-    {file = "bumpver-2024.1130-py2.py3-none-any.whl", hash = "sha256:8e54220aefe7db25148622f45959f7beb6b8513af0b0429b38b9072566665a49"},
-    {file = "bumpver-2024.1130.tar.gz", hash = "sha256:74f7ebc294b2240f346e99748cc6f238e57b050999d7428db75d76baf2bf1437"},
+    {file = "bumpver-2025.1131-py2.py3-none-any.whl", hash = "sha256:c02527f6ed7887afbc06c07630047b24a9f9d02d544a65639e99bf8b92aaa674"},
+    {file = "bumpver-2025.1131.tar.gz", hash = "sha256:a35fd2d43a5f65f014035c094866bd3bd6c739606f29fd41246d6ec6e839d3f9"},
 ]
 
 [package.dependencies]
@@ -1195,4 +1195,4 @@ socks = ["PySocks (>=1.5.6,!=1.5.7,<2.0)"]
 [metadata]
 lock-version = "2.1"
 python-versions = ">=3.10"
-content-hash = "1e60c1137da8dbf8e97a1e8bb6aca0426f71eb0f111a20cbd1fb7f218c02d42a"
+content-hash = "bfe472f13b11775cd67baad2d8c93702d5c0b42d1b2ccfc2d222735abe37b459"
