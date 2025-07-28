@@ -51,7 +51,7 @@ packages = [{ include = "pipask", from = "src" }]
 [tool.poetry.group.dev.dependencies]
 pyright = {extras = ["nodejs"], version = "^1.1.403"}
 pytest = ">=8.3.4"
-bumpver = "^2024.1130"
+bumpver = "^2025.1131"
 pytest-asyncio = ">=0.25.0"
 bandit = ">=1.8.0"
 ruff = ">=0.8.4"
