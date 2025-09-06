@@ -25,8 +25,8 @@ _BASE_URL = "https://pypistats.org/api"
 
 
 class PypiStatsClient:
-    def __init__(self):
-        self.client = httpx.AsyncClient()
+    def __init__(self, async_client: None | httpx.AsyncClient = None):
+        self.client = async_client or httpx.AsyncClient()
 
     async def get_download_stats(self, package_name: str) -> DownloadStats | None:
         url = f"{_BASE_URL}/packages/{canonicalize_name(package_name)}/recent"

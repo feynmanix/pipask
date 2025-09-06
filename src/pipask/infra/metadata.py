@@ -140,10 +140,10 @@ def fetch_metadata_from_pypi_is_available(req: InstallRequirement, pip_session: 
         version, file = _find_release_by_hash(project_info.releases, req.link.as_hashes())
         if version is not None:
             return _get_pypi_metadata_distribution(canonicalize_name(req.name), Version(version), pip_session)
-    else:
-        # Not a pypi link, and no hashes to check againsg
-        # -> we can't be sure if we would be fetching the correct metadata
-        return None
+
+    # Not a pypi link, and no hashes to check against
+    # -> we can't be sure if we would be fetching the correct metadata
+    return None
 
 
 def parse_link_version(link: Link) -> Version:

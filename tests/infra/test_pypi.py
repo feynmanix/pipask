@@ -129,7 +129,7 @@ async def test_pypi_matching_release_info_gets_info_only_when_hash_matches(hash_
     def mock_handler(_req):
         return httpx.Response(200, json=mock_release_info.model_dump(mode="json", by_alias=True))
 
-    pypi_client = PypiClient(transport=(httpx.MockTransport(mock_handler)))
+    pypi_client = PypiClient(httpx.AsyncClient(follow_redirects=True, transport=httpx.MockTransport(mock_handler)))
 
     # Act
     result = await pypi_client.get_matching_release_info(package)

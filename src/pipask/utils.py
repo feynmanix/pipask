@@ -6,6 +6,9 @@ from pydantic import BaseModel
 import httpx
 import os
 import sys
+from optparse import Values
+import ssl
+import truststore
 
 logger = logging.getLogger(__name__)
 
@@ -34,8 +37,66 @@ class TimeLogger:
 ResponseT = TypeVar("ResponseT", bound=BaseModel)
 
 
+def create_httpx_client(
+    options: Values,
+    retries: None | int = None,
+    timeout: None | int = None,
+) -> httpx.AsyncClient:
+    # Adapted from SessionCommandMixin._build_session()
+
+    # Handle SSL context
+    ssl_context = None
+    if hasattr(options, "features_enabled") and "truststore" in options.features_enabled:
+        ssl_context = truststore.SSLContext(ssl.PROTOCOL_TLS_CLIENT)
+
+    # Configure timeout
+    request_timeout = timeout or getattr(options, "timeout", 30)
+    timeout_config = httpx.Timeout(
+        timeout=float(request_timeout) if request_timeout else 30.0,
+        connect=5.0,
+        read=float(request_timeout) if request_timeout else 30.0,
+        write=float(request_timeout) if request_timeout else 30.0,
+        pool=5.0,
+    )
+
+    # Create transport with retry configuration
+    max_retries = retries if retries is not None else 0
+
+    # Handle custom CA bundle
+    verify_ssl = ssl_context if ssl_context else True
+    if options.cert:
+        verify_ssl = options.cert
+
+    # Handle client certificate
+    client_cert: None | str | tuple[str, str] = None
+    if options.client_cert:
+        client_cert = options.client_cert
+
+    # Create transport with configuration
+    transport = httpx.AsyncHTTPTransport(
+        retries=max_retries,
+        verify=verify_ssl,
+        cert=client_cert,
+        http2=True,
+    )
+
+    # Create the async client
+    client = httpx.AsyncClient(
+        transport=transport,
+        timeout=timeout_config,
+        proxy=options.proxy,
+        follow_redirects=True,
+    )
+
+    return client
+
+
 async def simple_get_request(
-    url: str, client: httpx.AsyncClient, response_model: type[ResponseT], *, headers: dict[str, str] | None = None
+    url: str,
+    client: httpx.AsyncClient,
+    response_model: type[ResponseT],
+    *,
+    headers: dict[str, str] | None = None,
 ) -> ResponseT | None:
     async with TimeLogger(f"GET {url}", logger):
         response = await client.get(url, headers=headers)
@@ -46,7 +107,11 @@ async def simple_get_request(
 
 
 def simple_get_request_sync(
-    url: str, session: requests.Session, response_model: type[ResponseT], *, headers: dict[str, str] | None = None
+    url: str,
+    session: requests.Session,
+    response_model: type[ResponseT],
+    *,
+    headers: dict[str, str] | None = None,
 ) -> ResponseT | None:
     with TimeLogger(f"GET {url}", logger):
         response = session.get(url, headers=headers)
