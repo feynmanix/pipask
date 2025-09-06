@@ -64,12 +64,12 @@ def create_httpx_client(
 
     # Handle custom CA bundle
     verify_ssl = ssl_context if ssl_context else True
-    if options.cert:
+    if hasattr(options, "cert") and options.cert:
         verify_ssl = options.cert
 
     # Handle client certificate
     client_cert: None | str | tuple[str, str] = None
-    if options.client_cert:
+    if hasattr(options, "client_cert") and options.client_cert:
         client_cert = options.client_cert
 
     # Create transport with configuration
