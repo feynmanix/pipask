@@ -1,5 +1,6 @@
 import asyncio
 import logging
+from optparse import Values
 import os
 import sys
 from contextlib import aclosing
@@ -30,6 +31,7 @@ from pipask.infra.pypistats import PypiStatsClient
 from pipask.infra.repo_client import RepoClient
 from pipask.infra.vulnerability_details import OsvVulnerabilityDetailsService
 from pipask.report import print_report
+from pipask.utils import create_httpx_client
 
 console = Console()
 
@@ -81,7 +83,7 @@ def main(args: list[str] | None = None) -> None:
 
             # 3. Run checks on the dependencies to install
             if len(packages_to_install) > 0:
-                check_results = asyncio.run(execute_checks(packages_to_install, progress))
+                check_results = asyncio.run(execute_checks(packages_to_install, progress, install_args.options))
 
         # 4. Either delegate actual installation to pip or abort (based on the checks and user consent)
         if len(packages_to_install) == 0:
@@ -133,13 +135,14 @@ def get_pip_install_report_with_consent(args: InstallArgs, progress_task: CheckT
 
 
 async def execute_checks(
-    packages_to_install: list[InstallationReportItem], progress: SimpleTaskProgress
+    packages_to_install: list[InstallationReportItem], progress: SimpleTaskProgress, install_options: Values
 ) -> list[PackageCheckResults]:
     async with (
-        aclosing(PypiClient()) as pypi_client,
-        aclosing(RepoClient()) as repo_client,
-        aclosing(PypiStatsClient()) as pypi_stats_client,
-        aclosing(OsvVulnerabilityDetailsService()) as vulnerability_details_service,
+        aclosing(create_httpx_client(install_options)) as httpx_client,
+        aclosing(PypiClient(httpx_client)) as pypi_client,
+        aclosing(RepoClient(httpx_client)) as repo_client,
+        aclosing(PypiStatsClient(httpx_client)) as pypi_stats_client,
+        aclosing(OsvVulnerabilityDetailsService(httpx_client)) as vulnerability_details_service,
     ):
         checks_executor = ChecksExecutor(
             pypi_client=pypi_client,

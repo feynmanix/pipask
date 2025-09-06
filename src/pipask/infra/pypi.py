@@ -71,7 +71,14 @@ class ProjectUrls(BaseModel):
         return self.download_capitalized or self.download_lowercase
 
     def recognized_repo_url(self) -> str | None:
-        for url in [self.repository, self.source, self.homepage, self.documentation, self.issues, self.download]:
+        for url in [
+            self.repository,
+            self.source,
+            self.homepage,
+            self.documentation,
+            self.issues,
+            self.download,
+        ]:
             if url and (repo_url := _get_maybe_repo_url(url)):
                 return repo_url
         return None
@@ -203,8 +210,8 @@ class VerifiedPypiReleaseInfo:
 
 
 class PypiClient:
-    def __init__(self, transport: AsyncBaseTransport | None = None):
-        self.client = httpx.AsyncClient(follow_redirects=True, transport=transport)
+    def __init__(self, async_client: None | httpx.AsyncClient = None):
+        self.client = async_client or httpx.AsyncClient(follow_redirects=True)
 
     async def get_project_info(self, project_name: str) -> ProjectResponse | None:
         """Get project metadata from PyPI."""
@@ -255,7 +262,9 @@ class PypiClient:
 
     async def get_attestations(self, verified_release_info: VerifiedPypiReleaseInfo) -> AttestationResponse | None:
         url = _integrity_url(
-            verified_release_info.name, verified_release_info.version, verified_release_info.release_filename
+            verified_release_info.name,
+            verified_release_info.version,
+            verified_release_info.release_filename,
         )
         headers = {"Accept": "application/vnd.pypi.integrity.v1+json"}
         return await simple_get_request(url, self.client, AttestationResponse, headers=headers)

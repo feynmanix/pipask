@@ -29,8 +29,8 @@ class RepoInfo:
 
 
 class RepoClient:
-    def __init__(self):
-        self.client = httpx.AsyncClient(follow_redirects=True)
+    def __init__(self, async_client: None | httpx.AsyncClient = None):
+        self.client = async_client or httpx.AsyncClient(follow_redirects=True)
 
     async def get_repo_info(self, repo_url: str) -> RepoInfo | None:
         match = REPO_URL_REGEX.match(repo_url)
