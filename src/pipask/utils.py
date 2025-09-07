@@ -77,14 +77,14 @@ def create_httpx_client(
         retries=max_retries,
         verify=verify_ssl,
         cert=client_cert,
-        http2=True,
+        http2=False,
     )
 
     # Create the async client
     client = httpx.AsyncClient(
         transport=transport,
         timeout=timeout_config,
-        proxy=options.proxy,
+        proxy=options.proxy or None,
         follow_redirects=True,
     )
 
