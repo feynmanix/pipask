@@ -81,7 +81,11 @@ async def test_https_uses_connect_through_proxy():
         assert len(MockProxyHandler.received_requests) > 0, "Proxy did not receive any requests!"
         request = MockProxyHandler.received_requests[0]
         assert request["method"] == "CONNECT", f"Expected CONNECT but got {request['method']}"
-        assert "example.com:443" in str(request["path"]), f"Expected example.com:443 in {request['path']}"
+        # Parse "host:port" from CONNECT path and assert exact match
+        host_port = str(request["path"]).split(":")
+        assert len(host_port) == 2, f"Expected 'host:port' in path, but got: {request['path']}"
+        assert host_port[0] == "example.com", f"Expected host 'example.com', got {host_port[0]}"
+        assert host_port[1] == "443", f"Expected port '443', got {host_port[1]}"
 
 
 @pytest.mark.asyncio
