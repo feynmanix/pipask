@@ -5,7 +5,6 @@ from datetime import datetime
 from typing import List, Optional, Tuple
 
 import httpx
-from httpx import AsyncBaseTransport
 from pydantic import BaseModel, Field
 
 from pipask._vendor.pip._internal.models.index import PyPI  # type: ignore
